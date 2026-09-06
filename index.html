@@ -50,43 +50,7 @@
     const { useState, useEffect, Component } = React;
 
     // ==========================================
-    // 1. ERROR BOUNDARY
-    // ==========================================
-    class ErrorBoundary extends Component {
-      constructor(props) {
-        super(props);
-        this.state = { hasError: false, error: null };
-      }
-      static getDerivedStateFromError(error) {
-        return { hasError: true, error: error };
-      }
-      componentDidCatch(error, info) {
-        console.error("ErrorBoundary caught:", error, info);
-      }
-      render() {
-        if (this.state.hasError) {
-          return (
-            <div className="p-4 m-4 bg-red-50 border border-red-200 rounded-lg text-xs space-y-2 text-red-800">
-              <h3 className="font-bold text-sm">အချက်အလက် စစ်ဆေးရန် လိုအပ်ပါသည်</h3>
-              <p>ထည့်သွင်းထားသော ရက်စွဲ သို့မဟုတ် ဂဏန်းတစ်ခုခု မှားယွင်းနေပါသည်။</p>
-              <pre className="p-2 bg-white rounded border border-red-200 text-[10px] overflow-x-auto">
-                {this.state.error ? this.state.error.toString() : ''}
-              </pre>
-              <button
-                onClick={() => { localStorage.clear(); window.location.reload(); }}
-                className="bg-red-700 text-white px-3 py-1.5 rounded font-bold mt-2 shadow"
-              >
-                မူလအခြေအနေသို့ ပြန်လည်စတင်မည်
-              </button>
-            </div>
-          );
-        }
-        return this.props.children;
-      }
-    }
-
-    // ==========================================
-    // 2. CONSTANTS & ASTRONOMICAL TABLES
+    // 1. CONSTANTS & ASTRONOMICAL TABLES
     // ==========================================
     const RASI_NAMES_EN = ['Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo', 'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces'];
     const RASI_NAMES_MY = ['မိဿ', 'ပြိဿ', 'မေထုန်', 'ကရကဋ်', 'သိဟ်', 'ကန်', 'တူ', 'ဗြိစ္ဆာ', 'ဓနု', 'မကာရ', 'ကုံ', 'မိန်'];
@@ -221,9 +185,7 @@
       }
     };
 
-    // ==========================================
-    // 3. MATHEMATICAL & EPHEMERIS CORE
-    // ==========================================
+    // Math normalizer
     function norm360(deg) {
       if (typeof deg !== 'number' || isNaN(deg)) return 0;
       let d = deg % 360;
@@ -932,7 +894,242 @@
     }
 
     // ==========================================
-    // 4. MAIN APP CONTROLLER
+    // 4. CHART & MODAL COMPONENTS (HOISTED)
+    // ==========================================
+    function EastChart({ planets, transitPlanets, isOverlay, vargaNum, birthInfo, transitInfo, size = 330 }) {
+      const u = size / 3;
+      const lagnaSign = calculateVarga(planets ? planets.Lagna : 0, vargaNum);
+      const natalBySign = [[], [], [], [], [], [], [], [], [], [], [], []];
+      const transitBySign = [[], [], [], [], [], [], [], [], [], [], [], []];
+
+      if (planets) {
+        Object.keys(planets).forEach((k) => {
+          if (k === 'ayanamsaVal') return;
+          const s = calculateVarga(planets[k], vargaNum);
+          safeAdd(natalBySign, s, PLANET_SHORT[k] + ' ' + Math.floor(norm360(planets[k]) % 30) + '°');
+        });
+      }
+      if (isOverlay && transitPlanets) {
+        Object.keys(transitPlanets).forEach((k) => {
+          if (k === 'ayanamsaVal') return;
+          const s = calculateVarga(transitPlanets[k], 1);
+          safeAdd(transitBySign, s, PLANET_SHORT[k]);
+        });
+      }
+
+      const rasiBoxes = [
+        { sign: 0, x: 1.5 * u, y: 0.25 * u, name: 'Aries' }, { sign: 1, x: 0.65 * u, y: 0.3 * u, name: 'Taurus' },
+        { sign: 2, x: 0.3 * u, y: 0.65 * u, name: 'Gemini' }, { sign: 3, x: 0.45 * u, y: 1.5 * u, name: 'Cancer' },
+        { sign: 4, x: 0.3 * u, y: 2.35 * u, name: 'Leo' }, { sign: 5, x: 0.65 * u, y: 2.7 * u, name: 'Virgo' },
+        { sign: 6, x: 1.5 * u, y: 2.75 * u, name: 'Libra' }, { sign: 7, x: 2.35 * u, y: 2.7 * u, name: 'Scorpio' },
+        { sign: 8, x: 2.7 * u, y: 2.35 * u, name: 'Sagittarius' }, { sign: 9, x: 2.55 * u, y: 1.5 * u, name: 'Capricorn' },
+        { sign: 10, x: 2.7 * u, y: 0.65 * u, name: 'Aquarius' }, { sign: 11, x: 2.35 * u, y: 0.3 * u, name: 'Pisces' }
+      ];
+
+      return (
+        <svg width={size} height={size} className="mx-auto bg-white rounded border-2 border-emerald-800 shadow">
+          <rect x="0" y="0" width={size} height={size} stroke="#065F46" strokeWidth="2" fill="#FFFFFF" />
+          <line x1={u} y1="0" x2={u} y2={size} stroke="#065F46" strokeWidth="1.2" />
+          <line x1={2 * u} y1="0" x2={2 * u} y2={size} stroke="#065F46" strokeWidth="1.2" />
+          <line x1="0" y1={u} x2={size} y2={u} stroke="#065F46" strokeWidth="1.2" />
+          <line x1="0" y1={2 * u} x2={size} y2={2 * u} stroke="#065F46" strokeWidth="1.2" />
+          <line x1="0" y1="0" x2={u} y2={u} stroke="#065F46" strokeWidth="1.2" />
+          <line x1={3 * u} y1="0" x2={2 * u} y2={u} stroke="#065F46" strokeWidth="1.2" />
+          <line x1={2 * u} y1={2 * u} x2={3 * u} y2={3 * u} stroke="#065F46" strokeWidth="1.2" />
+          <line x1={u} y1={2 * u} x2="0" y2={3 * u} stroke="#065F46" strokeWidth="1.2" />
+
+          <rect x={u} y={u} width={u} height={u} fill={isOverlay ? '#FEF9C3' : '#F0FDF4'} stroke="#065F46" />
+          {isOverlay && transitInfo && birthInfo ? (
+            <g>
+              <text x={1.5 * u} y={u + 14} fontSize="8" fontWeight="bold" fill="#B91C1C" textAnchor="middle">{transitInfo.date} • {transitInfo.time}</text>
+              <text x={1.5 * u} y={u + 25} fontSize="7.5" fill="#78350F" textAnchor="middle">{transitInfo.city} (ကောဇာ)</text>
+              <line x1={u + 8} y1={1.5 * u} x2={2 * u - 8} y2={1.5 * u} stroke="#065F46" strokeDasharray="3,3" />
+              <text x={1.5 * u} y={1.5 * u + 14} fontSize="8" fontWeight="bold" fill="#1E3A8A" textAnchor="middle">{birthInfo.date} • {birthInfo.time}</text>
+              <text x={1.5 * u} y={1.5 * u + 25} fontSize="7.5" fill="#1E3A8A" textAnchor="middle">{birthInfo.city} (မွေးဇာတာ)</text>
+              <text x={1.5 * u} y={2 * u - 6} fontSize="7.5" fontWeight="bold" fill="#065F46" textAnchor="middle">စက်ပြိုင် (East)</text>
+            </g>
+          ) : (
+            <g>
+              <text x={1.5 * u} y={1.5 * u - 10} fontSize="12" fontWeight="bold" fill="#065F46" textAnchor="middle">D-{vargaNum}</text>
+              <text x={1.5 * u} y={1.5 * u + 5} fontSize="9" fill="#047857" textAnchor="middle">{(birthInfo && birthInfo.name) ? birthInfo.name : 'Vedic Chart'}</text>
+              <text x={1.5 * u} y={1.5 * u + 18} fontSize="8" fill="#6B7280" textAnchor="middle">East</text>
+            </g>
+          )}
+
+          {rasiBoxes.map((b) => {
+            const bhava = ((b.sign - lagnaSign + 12) % 12) + 1;
+            const isL = bhava === 1;
+            const natalList = natalBySign[b.sign] || [];
+            const transitList = transitBySign[b.sign] || [];
+            return (
+              <g key={b.sign}>
+                <text x={b.x} y={b.y - 11} fontSize="7.5" fontWeight="bold" fill={isL ? '#DC2626' : '#065F46'} textAnchor="middle">
+                  {b.name} (H{bhava}{isL ? '-လဂ်' : ''})
+                </text>
+                {isOverlay && transitList.length > 0 && (
+                  <g>
+                    <rect x={b.x - 20} y={b.y - 8} width="40" height="12" rx="2" fill="#FEE2E2" stroke="#EF4444" strokeWidth="0.7" />
+                    <text x={b.x} y={b.y + 1} fontSize="7.5" fontWeight="bold" fill="#DC2626" textAnchor="middle">ကော: {transitList.join(',')}</text>
+                  </g>
+                )}
+                {natalList.map((str, idx) => (
+                  <text key={idx} x={b.x} y={b.y + (isOverlay ? 13 : 2) + (idx * 9.5)} fontSize="8" fontWeight={str.indexOf('As') === 0 ? 'bold' : 'normal'} fill={str.indexOf('As') === 0 ? '#DC2626' : '#1E293B'} textAnchor="middle">
+                    {str}
+                  </text>
+                ))}
+              </g>
+            );
+          })}
+        </svg>
+      );
+    }
+
+    function SouthChart({ planets, transitPlanets, isOverlay, vargaNum, size = 320 }) {
+      const c = size / 4;
+      const lagnaSign = calculateVarga(planets ? planets.Lagna : 0, vargaNum);
+      const signLayout = [
+        { s: 11, r: 0, c: 0 }, { s: 0, r: 0, c: 1 }, { s: 1, r: 0, c: 2 }, { s: 2, r: 0, c: 3 },
+        { s: 10, r: 1, c: 0 }, { s: 3, r: 1, c: 3 }, { s: 9, r: 2, c: 0 }, { s: 4, r: 2, c: 3 },
+        { s: 8, r: 3, c: 0 }, { s: 7, r: 3, c: 1 }, { s: 6, r: 3, c: 2 }, { s: 5, r: 3, c: 3 }
+      ];
+      const natalBySign = [[], [], [], [], [], [], [], [], [], [], [], []];
+      const transitBySign = [[], [], [], [], [], [], [], [], [], [], [], []];
+      if (planets) {
+        Object.keys(planets).forEach((k) => {
+          if (k !== 'ayanamsaVal') {
+            const s = calculateVarga(planets[k], vargaNum);
+            safeAdd(natalBySign, s, PLANET_SHORT[k] + ' ' + Math.floor(norm360(planets[k]) % 30) + '°');
+          }
+        });
+      }
+      if (isOverlay && transitPlanets) {
+        Object.keys(transitPlanets).forEach((k) => {
+          if (k !== 'ayanamsaVal') {
+            const s = calculateVarga(transitPlanets[k], 1);
+            safeAdd(transitBySign, s, PLANET_SHORT[k]);
+          }
+        });
+      }
+
+      return (
+        <svg width={size} height={size} className="mx-auto bg-white rounded border-2 border-amber-900 shadow">
+          <rect x="0" y="0" width={size} height={size} stroke="#78350F" strokeWidth="2" fill="#FFFFFF" />
+          {[1, 2, 3].map((i) => (
+            <g key={i}>
+              <line x1={i * c} y1="0" x2={i * c} y2={size} stroke="#78350F" strokeWidth="1" />
+              <line x1="0" y1={i * c} x2={size} y2={i * c} stroke="#78350F" strokeWidth="1" />
+            </g>
+          ))}
+          <rect x={c} y={c} width={c * 2} height={c * 2} fill={isOverlay ? '#FEF9C3' : '#FFFBEB'} stroke="#78350F" />
+          <text x={size / 2} y={size / 2 - 8} fontSize="13" fontWeight="bold" fill="#92400E" textAnchor="middle">{isOverlay ? 'စက်ပြိုင် (South)' : 'D-' + vargaNum}</text>
+          <text x={size / 2} y={size / 2 + 12} fontSize="9.5" fill="#B45309" textAnchor="middle">South Indian</text>
+
+          {signLayout.map((box) => {
+            const x = box.c * c, y = box.r * c, bhava = ((box.s - lagnaSign + 12) % 12) + 1;
+            const natalList = natalBySign[box.s] || [];
+            const transitList = transitBySign[box.s] || [];
+            return (
+              <g key={box.s}>
+                <text x={x + 4} y={y + 10} fontSize="7.5" fontWeight="bold" fill={bhava === 1 ? '#DC2626' : '#78350F'}>{RASI_NAMES_EN[box.s].slice(0, 4)} (H{bhava})</text>
+                {isOverlay && (
+                  <g>
+                    <rect x={x + 2} y={y + 13} width={c - 4} height="14" rx="2" fill="#FEE2E2" stroke="#EF4444" strokeWidth="0.8" />
+                    <text x={x + 5} y={y + 23} fontSize="7.5" fontWeight="bold" fill="#DC2626">ကော: {transitList.join(',') || '-'}</text>
+                  </g>
+                )}
+                {natalList.map((str, idx) => (
+                  <text key={idx} x={x + 4} y={y + (isOverlay ? 37 : 21) + idx * 9.5} fontSize="8.5" fontWeight={str.indexOf('As') === 0 ? 'bold' : 'normal'} fill={str.indexOf('As') === 0 ? '#DC2626' : '#1E293B'}>{str}</text>
+                ))}
+              </g>
+            );
+          })}
+        </svg>
+      );
+    }
+
+    function NorthChart({ planets, transitPlanets, isOverlay, vargaNum, size = 320 }) {
+      const h = size / 2;
+      const lagnaSign = calculateVarga(planets ? planets.Lagna : 0, vargaNum);
+      const natalByHouse = [[], [], [], [], [], [], [], [], [], [], [], []];
+      const transitByHouse = [[], [], [], [], [], [], [], [], [], [], [], []];
+      if (planets) {
+        Object.keys(planets).forEach((k) => {
+          if (k !== 'ayanamsaVal') {
+            const house = (calculateVarga(planets[k], vargaNum) - lagnaSign + 12) % 12;
+            safeAdd(natalByHouse, house, PLANET_SHORT[k] + ' ' + Math.floor(norm360(planets[k]) % 30) + '°');
+          }
+        });
+      }
+      if (isOverlay && transitPlanets) {
+        Object.keys(transitPlanets).forEach((k) => {
+          if (k !== 'ayanamsaVal') {
+            const house = (calculateVarga(transitPlanets[k], 1) - lagnaSign + 12) % 12;
+            safeAdd(transitByHouse, house, PLANET_SHORT[k]);
+          }
+        });
+      }
+      const hCenters = [{ x: h, y: h * 0.45 }, { x: h * 0.5, y: h * 0.22 }, { x: h * 0.22, y: h * 0.5 }, { x: h * 0.45, y: h }, { x: h * 0.22, y: h * 1.5 }, { x: h * 0.5, y: h * 1.78 }, { x: h, y: h * 1.55 }, { x: h * 1.5, y: h * 1.78 }, { x: h * 1.78, y: h * 1.5 }, { x: h * 1.55, y: h }, { x: h * 1.78, y: h * 0.5 }, { x: h * 1.5, y: h * 0.22 }];
+
+      return (
+        <svg width={size} height={size} className="mx-auto bg-white rounded border-2 border-blue-900 shadow">
+          <rect x="0" y="0" width={size} height={size} stroke="#1E3A8A" strokeWidth="2" fill="#FFFFFF" />
+          <line x1={0} y1={0} x2={size} y2={size} stroke="#1E3A8A" strokeWidth="1.5" />
+          <line x1={0} y1={size} x2={size} y2={0} stroke="#1E3A8A" strokeWidth="1.5" />
+          <polygon points={`${h},0 ${size},${h} ${h},${size} 0,${h}`} stroke="#1E3A8A" strokeWidth="1.5" fill="none" />
+          {hCenters.map((c, hIdx) => {
+            const natalList = natalByHouse[hIdx] || [];
+            const transitList = transitByHouse[hIdx] || [];
+            return (
+              <g key={hIdx}>
+                <text x={c.x} y={c.y - 8} fontSize="7.5" fontWeight="bold" fill="#1E3A8A" textAnchor="middle">{RASI_NAMES_EN[(lagnaSign + hIdx) % 12].slice(0, 4)} (H{hIdx + 1})</text>
+                {isOverlay && transitList.length > 0 && (
+                  <text x={c.x} y={c.y + 1} fontSize="7.5" fontWeight="bold" fill="#DC2626" textAnchor="middle">[{transitList.join(',')}]</text>
+                )}
+                {natalList.map((str, idx) => (
+                  <text key={idx} x={c.x} y={c.y + (isOverlay ? 11 : 3) + idx * 9} fontSize="8.5" fontWeight={str.indexOf('As') === 0 ? 'bold' : 'normal'} fill={str.indexOf('As') === 0 ? '#DC2626' : '#1E293B'} textAnchor="middle">{str}</text>
+                ))}
+              </g>
+            );
+          })}
+        </svg>
+      );
+    }
+
+    // Fullscreen Chart View Modal (Pure Opaque Sheet - Never Dim)
+    function FullscreenChartModal({ isOpen, onClose, chartType, planets, transitPlanets, isOverlay, vargaNum, birthInfo, transitInfo }) {
+      if (!isOpen) return null;
+      return (
+        <div className="fixed inset-0 z-50 bg-slate-950/95 flex flex-col justify-between p-3">
+          <div className="flex justify-between items-center px-2 py-2 border-b border-slate-800 text-white">
+            <span className="font-bold text-sm text-emerald-400">
+              🔍 မျက်နှာပြင်ပြည့် ဇာတာကြည့်ရှုမှု (D-{vargaNum} {chartType.toUpperCase()})
+            </span>
+            <button onClick={onClose} className="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded text-xs font-bold shadow">
+              ✕ ပိတ်မည်
+            </button>
+          </div>
+
+          <div className="flex-1 flex items-center justify-center p-2 overflow-auto">
+            <div className="bg-white p-3 rounded-2xl shadow-2xl border border-slate-300">
+              {chartType === 'south' ? (
+                <SouthChart planets={planets} transitPlanets={transitPlanets} isOverlay={isOverlay} vargaNum={vargaNum} size={350} />
+              ) : chartType === 'north' ? (
+                <NorthChart planets={planets} transitPlanets={transitPlanets} isOverlay={isOverlay} vargaNum={vargaNum} size={350} />
+              ) : (
+                <EastChart planets={planets} transitPlanets={transitPlanets} isOverlay={isOverlay} vargaNum={vargaNum} birthInfo={birthInfo} transitInfo={transitInfo} size={350} />
+              )}
+            </div>
+          </div>
+
+          <div className="text-center text-[11px] text-slate-300 pb-2">
+            Screen အပြည့်ဖြင့် ဇာတာခွင်နှင့် ဂြိုဟ်ဒီဂရီများကို အနုစိတ် ကြည်လင်စွာ ဖတ်ရှုနိုင်ပါသည်။
+          </div>
+        </div>
+      );
+    }
+
+    // ==========================================
+    // 5. MAIN APPLICATION CONTROLLER
     // ==========================================
     function MainApp() {
       const [activeTab, setActiveTab] = useState('transit');
@@ -1020,7 +1217,7 @@
         setSearchTarget(target);
         try {
           const res = await fetch('https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(text) + '&limit=5', {
-            headers: { 'User-Agent': 'JyotishPWA/13.0' }
+            headers: { 'User-Agent': 'JyotishPWA/14.0' }
           });
           const data = await res.json();
           setCitySuggestions(data);
@@ -1052,6 +1249,7 @@
         return h;
       };
 
+      // Guaranteed Defined Date Object and Inputs
       const curY = now.getFullYear();
       const sY = safeYear(birthYear, curY);
       const sM = safeMonth(birthMonth, now.getMonth() + 1);
@@ -1270,7 +1468,7 @@
             </div>
           )}
 
-          {/* TAB 3: READINGS */}
+          {/* TAB 3: READINGS (အဟောစာတမ်း) */}
           {activeTab === 'readings' && (
             <div className="p-3 space-y-3 text-xs">
               <h2 className="font-bold text-emerald-900 text-sm">ဇာတာ အဟောစာတမ်း (Comprehensive Reading)</h2>
@@ -1424,7 +1622,7 @@
             </div>
           )}
 
-          {/* TAB 4: PRASHNA HORARY (ဟူးရား) */}
+          {/* TAB 4: PRASHNA HORARY (ဟူးရား - စာရိုက်မေးမြန်းမှုစနစ်) */}
           {activeTab === 'prashna' && (
             <div className="p-3 space-y-3 text-xs">
               <div className="flex justify-between items-baseline">
