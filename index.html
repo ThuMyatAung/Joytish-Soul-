@@ -1,0 +1,1683 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+  <meta charset="UTF-8">
+  <title>Jyotish Vedic App Pro</title>
+
+  <!-- iOS Standalone Web App Meta Tags -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Jyotish">
+  <meta name="theme-color" content="#065F46">
+
+  <!-- App Icon -->
+  <link rel="apple-touch-icon" href="https://api.iconify.design/twemoji:om.svg">
+  <link rel="icon" type="image/svg+xml" href="https://api.iconify.design/twemoji:om.svg">
+
+  <!-- Official Proven CDNs -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js" crossorigin="anonymous"></script>
+
+  <style>
+    body {
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      user-select: none;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    input, select {
+      -webkit-user-select: auto;
+      user-select: auto;
+    }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+  <div id="root">
+    <div class="flex flex-col items-center justify-center min-h-screen bg-slate-50 text-emerald-800 space-y-3">
+      <div class="w-8 h-8 border-4 border-emerald-700 border-t-transparent rounded-full animate-spin"></div>
+      <div class="text-xs font-semibold tracking-wide">Jyotish App စတင်ဖွင့်လှစ်နေပါသည်...</div>
+    </div>
+  </div>
+
+  <!-- SINGLE SCRIPT CONTEXT (100% BULLETPROOF SCOPE) -->
+  <script type="text/babel">
+    const { useState, useEffect, Component } = React;
+
+    // ==========================================
+    // 1. CONSTANTS & ASTRONOMICAL TABLES
+    // ==========================================
+    const RASI_NAMES_EN = ['Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo', 'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces'];
+    const RASI_NAMES_MY = ['မိဿ', 'ပြိဿ', 'မေထုန်', 'ကရကဋ်', 'သိဟ်', 'ကန်', 'တူ', 'ဗြိစ္ဆာ', 'ဓနု', 'မကာရ', 'ကုံ', 'မိန်'];
+    const PLANET_SHORT = { Lagna: 'As', Sun: 'Su', Moon: 'Mo', Mars: 'Ma', Mercury: 'Me', Jupiter: 'Ju', Venus: 'Ve', Saturn: 'Sa', Rahu: 'Ra', Ketu: 'Ke', Uranus: 'Ur', Neptune: 'Ne', Pluto: 'Pl' };
+    const NAKSHATRAS = ['Ashwini', 'Bharani', 'Krittika', 'Rohini', 'Mrigashirsha', 'Ardra', 'Punarvasu', 'Pushya', 'Ashlesha', 'Magha', 'Purva Phalguni', 'Uttara Phalguni', 'Hasta', 'Chitra', 'Swati', 'Vishakha', 'Anuradha', 'Jyeshtha', 'Mula', 'Purva Ashadha', 'Uttara Ashadha', 'Shravana', 'Dhanishta', 'Shatabhisha', 'Purva Bhadrapada', 'Uttara Bhadrapada', 'Revati'];
+    const DASHA_LORDS = [{ name: 'Ketu', years: 7 }, { name: 'Venus', years: 20 }, { name: 'Sun', years: 6 }, { name: 'Moon', years: 10 }, { name: 'Mars', years: 7 }, { name: 'Rahu', years: 18 }, { name: 'Jupiter', years: 16 }, { name: 'Saturn', years: 19 }, { name: 'Mercury', years: 17 }];
+    const ALL_VARGAS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 16, 20, 24, 27, 30, 40, 45, 60];
+    const RASI_LORDS = ['Mars', 'Venus', 'Mercury', 'Moon', 'Sun', 'Mercury', 'Venus', 'Mars', 'Jupiter', 'Saturn', 'Saturn', 'Jupiter'];
+
+    const NATURAL_RELATIONS = {
+      Sun: { friends: ['Moon', 'Mars', 'Jupiter'], enemies: ['Venus', 'Saturn'], neutral: ['Mercury'] },
+      Moon: { friends: ['Sun', 'Mercury'], enemies: [], neutral: ['Mars', 'Jupiter', 'Venus', 'Saturn'] },
+      Mars: { friends: ['Sun', 'Moon', 'Jupiter'], enemies: ['Mercury'], neutral: ['Venus', 'Saturn'] },
+      Mercury: { friends: ['Sun', 'Venus'], enemies: ['Moon'], neutral: ['Mars', 'Jupiter', 'Saturn'] },
+      Jupiter: { friends: ['Sun', 'Moon', 'Mars'], enemies: ['Mercury', 'Venus'], neutral: ['Saturn'] },
+      Venus: { friends: ['Mercury', 'Saturn'], enemies: ['Sun', 'Moon'], neutral: ['Mars', 'Jupiter'] },
+      Saturn: { friends: ['Mercury', 'Venus'], enemies: ['Sun', 'Moon', 'Mars'], neutral: ['Jupiter'] },
+      Rahu: { friends: ['Mercury', 'Venus', 'Saturn'], enemies: ['Sun', 'Moon', 'Mars'], neutral: ['Jupiter'] },
+      Ketu: { friends: ['Mars', 'Jupiter'], enemies: ['Sun', 'Moon'], neutral: ['Mercury', 'Venus', 'Saturn'] }
+    };
+
+    const DASHA_PREDICTIONS = {
+      Sun: 'တနင်္ဂနွေ မဟာဒသာကာလ: ရာထူးတိုးခြင်း၊ သြဇာအာဏာ ထင်ရှားခြင်း၊ အစိုးရနှင့် အထက်လူကြီးများ၏ ချီးမြှောက်မှု ရရှိခြင်းနှင့် မိမိကိုယ်ကို ယုံကြည်မှု မြင့်မားမည့် ကာလ ဖြစ်သည်။',
+      Moon: 'စန္ဒြာ မဟာဒသာကာလ: စိတ်အေးချမ်းသာယာမှု ရရှိခြင်း၊ ပြည်သူလူထုနှင့် ဆက်ဆံရေး ကောင်းမွန်ခြင်း၊ စီးပွားရေး တိုးတက်ခြင်းနှင့် အိမ်ထောင်ရေး သုခများ ခံစားရမည့် ကာလ ဖြစ်သည်။',
+      Mars: 'အင်္ဂါ မဟာဒသာကာလ: သတ္တိဗျတ္တိ တိုးပွားခြင်း၊ အိမ်ခြံမြေ ပိုင်ဆိုင်မှုများ ရရှိခြင်း၊ ပြိုင်ဘက်များကို အောင်နိုင်ခြင်းနှင့် လုပ်ငန်းသစ်များ စတင်နိုင်မည့် ကာလဖြစ်သည်။',
+      Rahu: 'ရာဟု မဟာဒသာကာလ: မထင်မှတ်သော အပြောင်းအလဲများ၊ နိုင်ငံရပ်ခြား ခရီးစဉ်များ၊ နည်းပညာနှင့် စွန့်စားရသော စီးပွားရေးများမှ အကျိုးအမြတ် ရရှိနိုင်သော ကာလဖြစ်သည်။',
+      Jupiter: 'ကြာသပတေး မဟာဒသာကာလ: ဘဝတွင် အကောင်းဆုံး ရွှေရောင်ကာလ ဖြစ်သည်။ ဓနဥစ္စာ ကြွယ်ဝခြင်း၊ အိမ်ထောင်ကျခြင်း၊ သားသမီး ရရှိခြင်းနှင့် တရားဓမ္မ၌ အထွတ်အထိပ် ရောက်မည့် အချိန်ဖြစ်သည်။',
+      Saturn: 'စနေ မဟာဒသာကာလ: ဇွဲလုံ့လဖြင့် ရုန်းကန်ရသော်လည်း ရေရှည်ခိုင်မာသော အောင်မြင်မှု အုတ်မြစ်ချနိုင်မည့် ကာလဖြစ်သည်။ တာဝန်ဝတ္တရား ကြီးမားတတ်သည်။',
+      Mercury: 'ဗုဒ္ဓဟူး မဟာဒသာကာလ: ဉာဏ်ပညာ ထက်မြက်ခြင်း၊ ကုန်သွယ်ရေးနှင့် စာပေ၊ ဆက်သွယ်ရေး လုပ်ငန်းများ အလွန်အောင်မြင်ခြင်းနှင့် ဝင်ငွေရလမ်းသစ်များ ပွင့်လန်းမည့် ကာလဖြစ်သည်။',
+      Ketu: 'ကိတ် မဟာဒသာကာလ: တရားဓမ္မ၊ လျှို့ဝှက်နက်နဲသော အသိပညာများနှင့် စိတ်ပိုင်းဆိုင်ရာ ငြိမ်းချမ်းမှုကို ပိုမိုရှာဖွေမိမည့် ကာလဖြစ်သည်။ တရားဘာဝနာ ပွားများသင့်သည်။',
+      Venus: 'သောကြာ မဟာဒသာကာလ: စည်းစိမ်ချမ်းသာ၊ အနုပညာ၊ ဇိမ်ခံပစ္စည်းနှင့် အချစ်ရေး၊ အိမ်ထောင်ရေး သုခအပြည့်အဝ ခံစားရမည့် အလွန်မင်္ဂလာရှိသော ကာလဖြစ်သည်။'
+    };
+
+    const PLANET_HOUSE_READINGS = {
+      Sun: {
+        1: 'မိမိကိုယ်ကို ယုံကြည်မှု မြင့်မားပြီး သြဇာအာဏာ ထင်ရှားမည်။ ခေါင်းဆောင်မှုနေရာ ရရှိတတ်သည်။',
+        2: 'မိသားစုတာဝန် ကြီးမားမည်။ ငွေကြေးစီးပွားအတွက် စကားပြောနှင့် အထက်လူကြီး အဆက်အသွယ် အသုံးချနိုင်သည်။',
+        3: 'ဇွဲလုံ့လကြီးမားခြင်း၊ ရဲရင့်ပြတ်သားသော သတ္တိရှိခြင်းနှင့် ညီအစ်ကိုမောင်နှမများအပေါ် သြဇာညောင်းခြင်း။',
+        4: 'နေအိမ်၊ မြေယာနှင့် ယာဉ်ရထား ကိစ္စများတွင် အောင်မြင်မှု ရရှိနိုင်သည်။',
+        5: 'ဉာဏ်ပညာထက်မြက်ပြီး ဖန်တီးနိုင်စွမ်း မြင့်မားမည်။ အနုပညာ၊ ပညာရေးနှင့် ရင်းနှီးမြှုပ်နှံမှုတွင် ထူးချွန်မည်။',
+        6: 'ရန်သူ၊ ပြိုင်ဘက်နှင့် အတိုက်အခိုက်များကို အောင်နိုင်မည်။ စိန်ခေါ်မှုများကို ကျော်လွှားနိုင်သည်။',
+        7: 'အိမ်ထောင်ဘက် သို့မဟုတ် စီးပွားဖက်သည် ဂုဏ်သိက္ခာရှိသူ၊ စရိုက်ခိုင်မာသူ ဖြစ်တတ်သည်။',
+        8: 'လျှို့ဝှက်နက်နဲသော ပညာရပ်များ၊ သုတေသနနှင့် အမွေအနှစ် ကိစ္စများတွင် ကံထူးမည်။',
+        9: 'ကံကြမ္မာအထောက်အပံ့ ကောင်းမွန်ပြီး ဖခင်နှင့် ဆရာသမားများ၏ စောင့်ရှောက်မှု ရရှိမည်။',
+        10: 'အလုပ်အကိုင်၊ စီးပွားရေးတွင် အထွတ်အထိပ်သို့ ရောက်ရှိမည်။ လူအများ၏ လေးစားမှုကို ရရှိမည်။',
+        11: 'လာဘ်လာဘ ပေါများခြင်း၊ အပေါင်းအသင်း ကောင်းမွန်ခြင်းနှင့် ဆန္ဒများ အလွယ်တကူ ပြည့်ဝမည်။',
+        12: 'နိုင်ငံရပ်ခြား ဆက်သွယ်ရေး၊ တစ်ကိုယ်တည်း ဖန်တီးရသော အနုပညာလုပ်ငန်းများတွင် ထူးချွန်မည်။'
+      },
+      Moon: {
+        1: 'စိတ်သဘောထား နူးညံ့သိမ်မွေ့ပြီး လူချစ်လူခင် ပေါများမည်။ စိတ်ခံစားမှု ထိလွယ်ရှလွယ် ဖြစ်တတ်သည်။',
+        2: 'စကားပြော ချိုသာပြေပြစ်ပြီး ဆွဲဆောင်မှု ရှိမည်။ ဓနဥစ္စာ ရှာဖွေရာတွင် ကံကောင်းမည်။',
+        3: 'ခရီးသွားလာမှုများခြင်း၊ အနုပညာနှင့် ဆက်သွယ်ရေးတွင် စိတ်ကူးစိတ်သန်း ကောင်းမွန်ခြင်း။',
+        4: 'မိခင်နှင့် နေအိမ်အပေါ် သံယောဇဉ် ကြီးမားမည်။ စိတ်အေးချမ်းသာယာမှုနှင့် နေအိမ် ပြည့်စုံမည်။',
+        5: 'ဉာဏ်ရည်မြင့်မားပြီး အနုပညာ၊ စာပေနှင့် စိတ်ကူးဉာဏ် ထူးချွန်မည်။ ကံကောင်းသော သားသမီး ရရှိမည်။',
+        6: 'အလုပ်အပေါ် စေတနာထား လုပ်ကိုင်သဖြင့် အောင်မြင်မည်။ အစာအိမ်ကျန်းမာရေး သတိပြုရမည်။',
+        7: 'အိမ်ထောင်ဘက်သည် နူးညံ့ချစ်ခင်ဖွယ် ကောင်းသူ ဖြစ်မည်။ ပြည်သူ့ဆက်ဆံရေး စီးပွားတွင် အကျိုးပေးသည်။',
+        8: 'စိတ်အာရုံခံစားမှု (Intuition) ထက်မြက်ပြီး လျှို့ဝှက်ချက်များကို ကြိုတင်သိမြင်တတ်သည်။',
+        9: 'ကံကြမ္မာ အလွန်ကောင်းမွန်ပြီး တရားဓမ္မ၊ ခရီးရှည်သွားလာမှုနှင့် ပညာရပ်များတွင် အောင်မြင်မည်။',
+        10: 'လုပ်ငန်းခွင်တွင် လူကြိုက်များခြင်း၊ နာမည်ကျော်ကြားခြင်းနှင့် အများအကျိုးဆောင်ရွက်ရခြင်း။',
+        11: 'ဝင်ငွေရလမ်း ကောင်းမွန်ပြီး စိတ်ကူးထားသည့် စီမံကိန်းများ အောင်မြင်မည်။ မိတ်ဆွေကောင်း ရရှိမည်။',
+        12: 'တစ်ကိုယ်တည်း နေထိုင်ရခြင်းကို နှစ်သက်ပြီး စိတ်ပိုင်းဆိုင်ရာ တရားထူး ရှာဖွေရာတွင် အကျိုးပေးသည်။'
+      },
+      Mars: {
+        1: 'သတ္တိဗျတ္တိ ပြည့်စုံပြီး စွန့်စားလုပ်ကိုင်ရဲသော ခေါင်းဆောင်စရိုက် ရှိသည်။',
+        2: 'ငွေကြေးရှာဖွေရာတွင် ပြတ်သားပြီး စီးပွားရေးစိတ် ပြင်းထန်မည်။',
+        3: 'ရဲစွမ်းသတ္တိ အပြည့်ရှိပြီး အခက်အခဲများကို မဆုတ်မနစ် ရင်ဆိုင်ကျော်လွှားနိုင်သည်။',
+        4: 'မြေယာ၊ တိုက်တာ၊ အိမ်ခြံမြေ ပိုင်ဆိုင်မှုတွင် အလွန်ကံကောင်းမည်။',
+        5: 'ဉာဏ်ရည်ထက်မြက်ပြီး စူးစမ်းလိုစိတ် ပြင်းထန်မည်။ ရင်းနှီးမြှုပ်နှံမှုတွင် ပြတ်သားမည်။',
+        6: 'ပြိုင်ဘက်ရန်သူဟူသမျှကို အောင်နိုင်မည်။ ကျန်းမာရေးခံနိုင်ရည် ကောင်းမွန်မည်။',
+        7: 'အိမ်ထောင်ရေးတွင် ညှိနှိုင်းမှု လိုအပ်သည်။ စီးပွားဖက်များနှင့် ပြတ်သားစွာ လက်တွဲနိုင်သည်။',
+        8: 'မထင်မှတ်သော အမွေအနှစ်နှင့် လျှို့ဝှက်ငွေကြေးများ ရရှိတတ်သည်။ စက်ပစ္စည်း သတိပြုရမည်။',
+        9: 'တရားမျှတမှုကို မြတ်နိုးပြီး ခရီးသွားလာမှုနှင့် အဆင့်မြင့်ပညာတွင် အောင်မြင်မည်။',
+        10: 'အလုပ်အကိုင်တွင် အထူးအောင်မြင်ပြီး ရာထူးတိုးခြင်း၊ ခေါင်းဆောင်မှု စွမ်းရည် ထင်ရှားမည်။',
+        11: 'ဝင်ငွေရလမ်း ကြမ်းကြမ်းရနိုင်ပြီး စီးပွားရေးလုပ်ငန်းကြီးများ တည်ထောင်နိုင်မည်။',
+        12: 'နိုင်ငံရပ်ခြား ကိစ္စများတွင် ဇွဲရှိရှိ ကြိုးစားပါက အောင်မြင်မည်။ အသုံးစရိတ် ထိန်းရမည်။'
+      },
+      Mercury: {
+        1: 'ဉာဏ်ပညာ ထက်မြက်ပြီး စကားပြောစွမ်းရည်၊ စာပေ၊ စာရင်းအင်းနှင့် ကုန်သွယ်မှုတွင် ပါရမီပါမည်။',
+        2: 'စကားပြောဖြင့် ဓနဥစ္စာ ရှာဖွေနိုင်မည်။ ဆွေးနွေးညှိနှိုင်းမှု ကျွမ်းကျင်မည်။',
+        3: 'စာရေးသားခြင်း၊ မီဒီယာ၊ ဆက်သွယ်ရေးနှင့် အနုပညာ ဖန်တီးမှုများတွင် ထူးချွန်မည်။',
+        4: 'စာပေပညာရပ်များတွင် ထူးချွန်ပြီး မိသားစုအတွင်း အသိပညာ ဖလှယ်မှု ကောင်းမွန်မည်။',
+        5: 'ထိုးထွင်းဉာဏ် ကောင်းမွန်ပြီး နည်းပညာ၊ ရင်းနှီးမြှုပ်နှံမှုနှင့် စာမေးပွဲ အောင်မြင်မှုများ ရရှိမည်။',
+        6: 'အငြင်းပွားမှုများကို ဉာဏ်ဖြင့် ဖြေရှင်းနိုင်မည်။ အသေးစိတ် စိစစ်လုပ်ကိုင်ရသော အလုပ်တွင် ထူးချွန်မည်။',
+        7: 'အိမ်ထောင်ဘက်သည် ပညာတတ်၊ စကားပြောကျွမ်းကျင်ပြီး စီးပွားရေးတွင် ကူညီနိုင်သူ ဖြစ်မည်။',
+        8: 'နက်နဲသော သုတေသန၊ စာရင်းအင်းနှင့် သိပ္ပံပညာရပ်များတွင် အောင်မြင်မည်။',
+        9: 'ဘာသာစကားများ တတ်မြောက်ခြင်း၊ အဆင့်မြင့်ပညာရပ်များနှင့် နိုင်ငံတကာ အဆက်အသွယ် ရရှိမည်။',
+        10: 'ကုန်သွယ်ရေး၊ မီဒီယာ၊ နည်းပညာနှင့် စာပေထုတ်ဝေရေး လုပ်ငန်းများတွင် အောင်မြင်မည်။',
+        11: 'စီးပွားရေး လုပ်ငန်းများစွာမှ ဝင်ငွေစီးဆင်းမှု ကောင်းမွန်မည်။ မိတ်ဆွေကောင်းများ ရရှိမည်။',
+        12: 'နိုင်ငံရပ်ခြားနှင့် ချိတ်ဆက်သော ကုန်သွယ်မှုများတွင် အောင်မြင်မည်။ စာချုပ်စာတမ်း သတိပြုရမည်။'
+      },
+      Jupiter: {
+        1: 'ဘဝကံကြမ္မာ မြင့်မားပြီး အကျင့်စာရိတ္တ ကောင်းမွန်မည်။ လူအများ လေးစားကြည်ညိုခံရမည်။',
+        2: 'ဓနဥစ္စာ အလွန်ကြွယ်ဝချမ်းသာမည်။ စကားပြောဆိုရာတွင် အမှန်တရား ပါဝင်မည်။',
+        3: 'မောင်နှမများနှင့် ချစ်ခင်ရင်းနှီးမည်။ ပညာဖြန့်ဝေခြင်းနှင့် အကြံပေး လုပ်ငန်းတွင် ထူးချွန်မည်။',
+        4: 'မိခင်ကျေးဇူး ခံစားရမည်။ နေအိမ်၊ မြေယာ ပြည့်စုံပြီး စိတ်နှလုံး အေးချမ်းသာယာစွာ နေထိုင်ရမည်။',
+        5: 'ပါရမီထူးချွန်သော သားသမီးများ ထွန်းကားမည်။ ပညာရှိ၊ ဆရာ၊ အကြံပေး ဖြစ်တတ်သည်။',
+        6: 'ရန်သူများကို မေတ္တာဖြင့် အောင်နိုင်မည်။ ကျန်းမာရေးအတွက် အစားအသောက် ထိန်းသင့်သည်။',
+        7: 'အိမ်ထောင်ဘက်သည် ဂုဏ်သရေရှိ ပညာတတ်သူတော်ကောင်း ဖြစ်မည်။ အိမ်ထောင်ရေး သုခရရှိမည်။',
+        8: 'အသက်ရှည်ခြင်း၊ မထင်မှတ်သော ဓနဥစ္စာ ရရှိခြင်းနှင့် တရားထူး တရားမြတ်များ သိမြင်နိုင်ခြင်း။',
+        9: 'ဘဝတွင် ကံအကောင်းဆုံး နေရာဖြစ်ပြီး ဘုန်းကံကြီးမားခြင်း၊ ဆရာသမား ချီးမြှောက်မှု ခံရခြင်း။',
+        10: 'အလုပ်အကိုင်တွင် အထွတ်အထိပ် ရာထူးရရှိမည်။ တရားစီရင်ရေး၊ ပညာရေး၊ ဘဏ်လုပ်ငန်းတွင် ထင်ရှားမည်။',
+        11: 'စည်းစိမ်ဥစ္စာ အတိုင်းအဆမရှိ တိုးတက်မည်။ ဆန္ဒများ အလွယ်တကူ ပြည့်ဝတတ်သည်။',
+        12: 'တရားဓမ္မ၌ မွေ့လျော်ပြီး အလှူဒါန ရက်ရောမည်။ နိုင်ငံရပ်ခြား ခရီးစဉ်များ ကောင်းမွန်မည်။'
+      },
+      Venus: {
+        1: 'ရုပ်ရည်ပြေပြစ်ပြီး ဆွဲဆောင်မှု ကောင်းမည်။ အနုပညာ၊ ဒီဇိုင်း၊ ဖက်ရှင်နှင့် ဇိမ်ခံပစ္စည်းတွင် ဝါသနာပါမည်။',
+        2: 'စကားပြော ချိုသာနူးညံ့ပြီး စည်းစိမ်ချမ်းသာ ကြွယ်ဝမည်။ အနုပညာ ရတနာများ ပိုင်ဆိုင်ရမည်။',
+        3: 'အနုပညာ ဖန်တီးမှုစွမ်းရည် ထက်မြက်မည်။ မိတ်ဆွေများနှင့် ပျော်ရွှင်စွာ ဆက်ဆံနိုင်မည်။',
+        4: 'လှပသော နေအိမ်နှင့် ဇိမ်ခံယာဉ်ရထားများ ပိုင်ဆိုင်ရမည်။ အိမ်တွင်းရေး ပျော်ရွှင်မည်။',
+        5: 'အချစ်ရေး အလွန်ကံကောင်းမည်။ ဖျော်ဖြေရေး၊ ရုပ်ရှင်၊ ဂီတနှင့် ဖန်တီးမှုတွင် ထူးချွန်မည်။',
+        6: 'အချစ်ရေးတွင် အပြိုင်အဆိုင် အနည်းငယ် ရှိတတ်သည်။ ကျန်းမာရေး သတိပြုသင့်သည်။',
+        7: 'ချောမောလှပပြီး သဘောထားကြီးသော အိမ်ထောင်ဘက် ရရှိမည်။ အိမ်ထောင်ရေး မေတ္တာ ပြည့်စုံမည်။',
+        8: 'အိမ်ထောင်ပြုပြီးနောက် စည်းစိမ် ပိုမိုတိုးတက်မည်။ အမွေအနှစ် အကျိုးခံစားခွင့် ရရှိမည်။',
+        9: 'အဆင့်မြင့် အနုပညာ လေ့လာခွင့်ရမည်။ ဘဝတစ်လျှောက် ကံကြမ္မာကောင်း၏ စောင့်ရှောက်မှု ခံရမည်။',
+        10: 'အနုပညာ၊ ဖက်ရှင်၊ အလှကုန်၊ ဟိုတယ်လုပ်ငန်းများတွင် ထိပ်တန်းသို့ တက်လှမ်းနိုင်မည်။',
+        11: 'ဝင်ငွေရလမ်း ကောင်းမွန်ပြီး မိတ်ဆွေများထံမှ အကူအညီများ အမြဲရရှိမည်။',
+        12: 'အိပ်ရာသုခ ပြည့်စုံပြီး အသုံးအစွဲ ရက်ရောမည်။ နိုင်ငံရပ်ခြား အပန်းဖြေခရီး သွားလာရတတ်သည်။'
+      },
+      Saturn: {
+        1: 'တည်ကြည်လေးနက်ပြီး တာဝန်ယူစိတ် ရှိမည်။ အသက်ကြီးလေ အောင်မြင်လေ ဖြစ်မည်။',
+        2: 'ငွေကြေးသုံးစွဲရာတွင် စနစ်တကျ ရှိမည်။ စီးပွားရေးကို ခိုင်မာစွာ တည်ဆောက်မည်။',
+        3: 'ဇွဲလုံ့လ ဝီရိယ ကြီးမားပြီး မည်သည့်အလုပ်မဆို တစိုက်မတ်မတ် လုပ်ကိုင်တတ်သည်။',
+        4: 'ခိုင်မာသော အိမ်ခြံမြေ၊ တိုက်တာများကို ကိုယ်တိုင် ကြိုးစားပိုင်ဆိုင်လာမည်။',
+        5: 'နက်နဲသော ပညာရပ်များကို စနစ်တကျ သင်ယူနိုင်မည်။ ရေရှည်စီမံကိန်းများဖြင့် အောင်မြင်မည်။',
+        6: 'ရန်သူများကို ဇွဲဖြင့် အနိုင်ယူမည်။ လုပ်ငန်းခွင်တွင် ခက်ခဲသည့် အလုပ်များကို ကျွမ်းကျင်စွာ ပြီးမြောက်မည်။',
+        7: 'အိမ်ထောင်ဘက်သည် ရင့်ကျက်တည်ကြည်သူ ဖြစ်တတ်သည်။ ရေရှည်ခိုင်မြဲသော အိမ်ထောင်ရေး ဖြစ်မည်။',
+        8: 'အသက်ရှည်စွာ နေထိုင်ရမည်။ ဘဝ၏ အနိမ့်အမြင့်များကို ကြံ့ကြံ့ခံ ကျော်လွှားနိုင်မည်။',
+        9: 'ရိုးရာဓလေ့နှင့် တရားဓမ္မကို လေးနက်စွာ လိုက်နာမည်။ အတွေ့အကြုံ ရင့်ကျက်ကာ ကြီးပွားမည်။',
+        10: 'အလုပ်ကြိုးစားမှုကြောင့် အောင်မြင်မည်။ စက်မှုလက်မှု၊ အုပ်ချုပ်ရေးတွင် ခေါင်းဆောင် ဖြစ်မည်။',
+        11: 'ရေရှည်တွင် ဓနဥစ္စာ အလွန်ခိုင်မာစွာ စုဆောင်းမိမည်။ သစ္စာရှိသော မိတ်ဆွေများ ရရှိမည်။',
+        12: 'အထီးကျန် တိတ်ဆိတ်စွာ အလုပ်လုပ်ရသော နေရာများတွင် အဆင်ပြေမည်။ နိုင်ငံရပ်ခြား အကျိုးပေးသည်။'
+      }
+    };
+
+    // ==========================================
+    // 2. MATHEMATICAL & ASTRONOMICAL FUNCTIONS
+    // ==========================================
+    function norm360(deg) {
+      if (typeof deg !== 'number' || isNaN(deg)) return 0;
+      let d = deg % 360;
+      if (d < 0) d += 360;
+      return d;
+    }
+
+    function safeAdd(arr, signIdx, val) {
+      let idx = Math.floor(norm360(signIdx * 30) / 30) % 12;
+      if (isNaN(idx) || idx < 0 || idx > 11) idx = 0;
+      if (!arr[idx]) arr[idx] = [];
+      arr[idx].push(val);
+    }
+
+    function getJulianDay(year, month, day, hour, minute, tz) {
+      let y = parseInt(year, 10) || 2026;
+      let m = parseInt(month, 10) || 1;
+      let d = parseInt(day, 10) || 1;
+      let h = parseInt(hour, 10) || 0;
+      let mn = parseInt(minute, 10) || 0;
+      let t = parseFloat(tz) || 6.5;
+
+      if (m <= 2) { y -= 1; m += 12; }
+      const A = Math.floor(y / 100);
+      const B = 2 - A + Math.floor(A / 4);
+      const utHour = h + mn / 60.0 - t;
+      return Math.floor(365.25 * (y + 4716)) + Math.floor(30.6001 * (m + 1)) + d + (utHour / 24.0) + B - 1524.5;
+    }
+
+    function getAyanamsa(jd, type) {
+      if (type === 'tropical') return 0;
+      const d = jd - 2451545.0;
+      const lahiri = 23.85709 + (d / 365.25) * 0.013969;
+      if (type === 'lahiri') return lahiri;
+      if (type === 'kp') return lahiri - 0.095;
+      if (type === 'raman') return 22.4105 + (d / 365.25) * 0.013969;
+      return lahiri;
+    }
+
+    function getPlanetaryDignity(planet, signIdx) {
+      if (['Lagna', 'Uranus', 'Neptune', 'Pluto'].indexOf(planet) !== -1 || signIdx < 0 || signIdx > 11) {
+        return { label: '-', color: 'text-slate-500' };
+      }
+
+      const exaltDebil = {
+        Sun: { ex: 0, deb: 6 }, Moon: { ex: 1, deb: 7 }, Mars: { ex: 9, deb: 3 },
+        Mercury: { ex: 5, deb: 11 }, Jupiter: { ex: 3, deb: 9 }, Venus: { ex: 11, deb: 5 },
+        Saturn: { ex: 6, deb: 0 }, Rahu: { ex: 1, deb: 7 }, Ketu: { ex: 7, deb: 1 }
+      };
+
+      if (exaltDebil[planet]) {
+        if (signIdx === exaltDebil[planet].ex) return { label: 'ဥစ္စ (အထွတ်အထိပ်)', color: 'text-amber-600 font-bold' };
+        if (signIdx === exaltDebil[planet].deb) return { label: 'နိစ္စ (အားလျော့)', color: 'text-rose-600 font-bold' };
+      }
+
+      const lord = RASI_LORDS[signIdx];
+      if (lord === planet) return { label: 'သယံ (ကသစ်)', color: 'text-emerald-700 font-bold' };
+
+      const rel = NATURAL_RELATIONS[planet];
+      if (rel) {
+        if (rel.friends.indexOf(lord) !== -1) return { label: 'မိတ်အိမ်', color: 'text-blue-600 font-medium' };
+        if (rel.enemies.indexOf(lord) !== -1) return { label: 'ရန်အိမ်', color: 'text-orange-600 font-medium' };
+        return { label: 'သမအိမ်', color: 'text-slate-600' };
+      }
+      return { label: 'သမအိမ်', color: 'text-slate-600' };
+    }
+
+    function calculateNASA_JPL_Planets(jd, lat, lon, ayanamsaType, nodeType) {
+      lat = parseFloat(lat) || 0;
+      lon = parseFloat(lon) || 0;
+      ayanamsaType = ayanamsaType || 'lahiri';
+      nodeType = nodeType || 'mean';
+      const d = jd - 2451545.0;
+      const T = d / 36525.0;
+      const ayanamsa = getAyanamsa(jd, ayanamsaType);
+
+      const L0_sun = norm360(280.46646 + 36000.76983 * T);
+      const M_sun = norm360(357.52911 + 35999.05029 * T) * (Math.PI / 180);
+      const C_sun = (1.914602 - 0.004817 * T) * Math.sin(M_sun) + (0.019993 - 0.000101 * T) * Math.sin(2 * M_sun) + 0.000289 * Math.sin(3 * M_sun);
+      let sunTrop = norm360(L0_sun + C_sun);
+
+      const L_m = norm360(218.3164477 + 481267.88123421 * T);
+      const D = norm360(297.8501921 + 445267.1114034 * T) * (Math.PI / 180);
+      const M = norm360(357.5291092 + 35999.0502909 * T) * (Math.PI / 180);
+      const Mp = norm360(134.9633964 + 477198.8675055 * T) * (Math.PI / 180);
+      const F = norm360(93.2720950 + 483202.0175233 * T) * (Math.PI / 180);
+
+      let moonTrop = L_m +
+        6.288774 * Math.sin(Mp) +
+        1.274027 * Math.sin(2 * D - Mp) +
+        0.658314 * Math.sin(2 * D) +
+        0.213618 * Math.sin(2 * Mp) -
+        0.185116 * Math.sin(M) -
+        0.114332 * Math.sin(2 * F) +
+        0.058793 * Math.sin(2 * D - 2 * Mp) +
+        0.057066 * Math.sin(2 * D - M - Mp) +
+        0.053322 * Math.sin(2 * D + Mp) +
+        0.045758 * Math.sin(2 * D - M);
+      moonTrop = norm360(moonTrop);
+
+      let omega = norm360(125.04452 - 1934.136261 * T + 0.0020708 * T * T);
+      if (nodeType === 'true') {
+        omega -= (1.4979 * Math.sin(2 * (D - F)) + 0.15 * Math.sin(M));
+      }
+      let rahuTrop = norm360(omega);
+      let ketuTrop = norm360(rahuTrop + 180);
+
+      function getPlanetXYZ(a0, a_dot, e0, e_dot, I0, I_dot, L0, L_dot, w0, w_dot, N0, N_dot) {
+        const a = a0 + a_dot * T;
+        let e = e0 + e_dot * T;
+        if (e < 0.0001) e = 0.0001;
+        if (e > 0.999) e = 0.999;
+        const I = norm360(I0 + I_dot * T) * Math.PI / 180;
+        const L = norm360(L0 + L_dot * T);
+        const w = norm360(w0 + w_dot * T);
+        const N = norm360(N0 + N_dot * T) * Math.PI / 180;
+        const M_val = norm360(L - w);
+        const M_rad = M_val * Math.PI / 180;
+        let E = M_rad + e * Math.sin(M_rad);
+        for (let k = 0; k < 6; k++) {
+          E = E - (E - e * Math.sin(E) - M_rad) / (1 - e * Math.cos(E));
+        }
+        const x_prime = a * (Math.cos(E) - e);
+        const y_prime = a * Math.sqrt(Math.max(0.0001, 1 - e * e)) * Math.sin(E);
+        const w_rad = norm360(w - (N0 + N_dot * T)) * Math.PI / 180;
+        const x = (Math.cos(w_rad) * Math.cos(N) - Math.sin(w_rad) * Math.sin(N) * Math.cos(I)) * x_prime +
+                  (-Math.sin(w_rad) * Math.cos(N) - Math.cos(w_rad) * Math.sin(N) * Math.cos(I)) * y_prime;
+        const y = (Math.cos(w_rad) * Math.sin(N) + Math.sin(w_rad) * Math.cos(N) * Math.cos(I)) * x_prime +
+                  (-Math.sin(w_rad) * Math.sin(N) + Math.cos(w_rad) * Math.cos(N) * Math.cos(I)) * y_prime;
+        return { x, y };
+      }
+
+      const earth = getPlanetXYZ(1.00000261, 0.00000562, 0.01671123, -0.00004392, -0.00001531, -0.01294668, 100.46457166, 35999.37244981, 102.93768193, 0.32327364, 0, 0);
+      const toGeocentric = (pXYZ) => norm360(Math.atan2(pXYZ.y - earth.y, pXYZ.x - earth.x) * 180 / Math.PI);
+
+      const mercury = getPlanetXYZ(0.38709927, 0.00000037, 0.20563593, 0.00001906, 7.00497902, -0.00594749, 252.25032350, 149472.67411175, 77.45779628, 0.16047689, 48.33076593, -0.12534081);
+      const venus = getPlanetXYZ(0.72333566, 0.00000390, 0.00677672, -0.00004107, 3.39467605, -0.00078890, 181.97909950, 58517.81538729, 131.60246718, 0.00268329, 76.67984255, -0.27769418);
+      const mars = getPlanetXYZ(1.52371034, 0.00001847, 0.09339410, 0.00007882, 1.84969142, -0.00813131, -4.55343205, 19140.30268499, -23.94362959, 0.44441088, 49.55953891, -0.29257343);
+      const jupiter = getPlanetXYZ(5.20288700, -0.00011607, 0.04838624, -0.00013253, 1.30439695, -0.00183714, 34.39644051, 3034.74612775, 14.72847983, 0.21252668, 100.47390909, 0.20469106);
+      const saturn = getPlanetXYZ(9.53667594, -0.00125060, 0.05386179, -0.00050991, 2.48599187, 0.00193609, 49.95424423, 1222.49362201, 92.59887831, -0.41897216, 113.66242448, -0.28867794);
+      const uranus = getPlanetXYZ(19.18916464, -0.00196176, 0.04725744, -0.00004397, 0.77263783, -0.00242939, 313.23810451, 428.48202785, 170.95427630, 0.40805281, 74.01692503, 0.04240589);
+      const neptune = getPlanetXYZ(30.06992276, 0.00026291, 0.00860619, 0.00002150, 1.77004347, 0.00035372, -55.12002969, 218.45945325, 44.96476227, -0.32241464, 131.78422574, -0.00508664);
+      const pluto = getPlanetXYZ(39.48211675, -0.00031596, 0.24882730, 0.00005170, 17.14001206, 0.00004818, 238.92903833, 145.20780515, 224.06889900, -0.04062942, 110.30393608, -0.01183482);
+
+      const GMST0 = norm360(280.46061837 + 360.98564736629 * d);
+      const LMST = norm360(GMST0 + lon);
+      const eps = (23.439291 - 0.000130042 * T) * (Math.PI / 180);
+      const yAsc = Math.cos(LMST * (Math.PI / 180));
+      const xAsc = -Math.sin(LMST * (Math.PI / 180)) * Math.cos(eps) - Math.tan(lat * (Math.PI / 180)) * Math.sin(eps);
+      let lagnaTrop = norm360(Math.atan2(yAsc, xAsc) * (180 / Math.PI));
+
+      const toSid = (deg) => norm360(deg - ayanamsa);
+
+      return {
+        Lagna: toSid(lagnaTrop), Sun: toSid(sunTrop), Moon: toSid(moonTrop),
+        Mars: toSid(toGeocentric(mars)), Mercury: toSid(toGeocentric(mercury)),
+        Jupiter: toSid(toGeocentric(jupiter)), Venus: toSid(toGeocentric(venus)),
+        Saturn: toSid(toGeocentric(saturn)), Rahu: toSid(rahuTrop), Ketu: toSid(ketuTrop),
+        Uranus: toSid(toGeocentric(uranus)), Neptune: toSid(toGeocentric(neptune)),
+        Pluto: toSid(toGeocentric(pluto)), ayanamsaVal: ayanamsa
+      };
+    }
+
+    function calculateVarga(longitude, v) {
+      const safeLon = norm360(longitude);
+      const sign = Math.floor(safeLon / 30) % 12;
+      const deg = safeLon % 30;
+      const isOdd = (sign % 2 === 0);
+
+      let res = sign;
+      if (v === 1) res = sign;
+      else if (v === 2) res = (deg < 15) ? (isOdd ? 4 : 3) : (isOdd ? 3 : 4);
+      else if (v === 3) res = (sign + Math.floor(deg / 10) * 4) % 12;
+      else if (v === 4) res = (sign + Math.floor(deg / 7.5) * 3) % 12;
+      else if (v === 5) {
+        const oddArr = [0, 10, 8, 2, 6], evenArr = [1, 5, 11, 9, 7];
+        const part = Math.min(4, Math.max(0, Math.floor(deg / 6)));
+        res = isOdd ? oddArr[part] : evenArr[part];
+      }
+      else if (v === 6) res = ((isOdd ? 0 : 6) + Math.floor(deg / 5)) % 12;
+      else if (v === 7) res = ((isOdd ? sign : sign + 6) + Math.floor(deg / (30 / 7))) % 12;
+      else if (v === 8) {
+        const start = (sign % 3 === 0) ? 0 : ((sign % 3 === 1) ? 8 : 4);
+        res = (start + Math.floor(deg / 3.75)) % 12;
+      }
+      else if (v === 9) res = ([0, 9, 6, 3][sign % 4] + Math.floor(deg / (30 / 9))) % 12;
+      else if (v === 10) res = ((isOdd ? sign : sign + 8) + Math.floor(deg / 3)) % 12;
+      else if (v === 11) res = (11 - sign + Math.floor(deg / (30 / 11)) + 12) % 12;
+      else if (v === 12) res = (sign + Math.floor(deg / 2.5)) % 12;
+      else if (v === 16) {
+        const start = (sign % 3 === 0) ? 0 : ((sign % 3 === 1) ? 4 : 8);
+        res = (start + Math.floor(deg / (30 / 16))) % 12;
+      }
+      else if (v === 20) {
+        const start = (sign % 3 === 0) ? 0 : ((sign % 3 === 1) ? 8 : 4);
+        res = (start + Math.floor(deg / 1.5)) % 12;
+      }
+      else if (v === 24) res = ((isOdd ? 4 : 3) + Math.floor(deg / 1.25)) % 12;
+      else if (v === 27) res = ([0, 3, 6, 9][sign % 4] + Math.floor(deg / (30 / 27))) % 12;
+      else if (v === 30) {
+        if (isOdd) {
+          res = (deg < 5) ? 0 : (deg < 10 ? 10 : (deg < 18 ? 8 : (deg < 25 ? 2 : 6)));
+        } else {
+          res = (deg < 5) ? 1 : (deg < 12 ? 5 : (deg < 20 ? 11 : (deg < 25 ? 9 : 7)));
+        }
+      }
+      else if (v === 40) res = ((isOdd ? 0 : 6) + Math.floor(deg / 0.75)) % 12;
+      else if (v === 45) {
+        const start = (sign % 3 === 0) ? 0 : ((sign % 3 === 1) ? 4 : 8);
+        res = (start + Math.floor(deg / (30 / 45))) % 12;
+      }
+      else if (v === 60) res = ((isOdd ? sign : sign + 6) + Math.floor(deg / 0.5)) % 12;
+
+      return ((Math.floor(res) % 12) + 12) % 12;
+    }
+
+    function calculateDashaTree(moonLong, birthDate) {
+      const safeMoon = norm360(moonLong);
+      const nakTotal = safeMoon / (360 / 27);
+      const nakIndex = norm360(Math.floor(nakTotal));
+      const lordIndex = ((nakIndex % 9) + 9) % 9;
+      const mLordInitial = DASHA_LORDS[lordIndex] || DASHA_LORDS[0];
+      const balanceYears = Math.max(0.01, (1 - (nakTotal - Math.floor(nakTotal))) * mLordInitial.years);
+      const fmt = (d) => {
+        try {
+          if (!d || isNaN(d.getTime())) return '2026-01-01';
+          return d.toISOString().split('T')[0];
+        } catch(e) {
+          return '2026-01-01';
+        }
+      };
+
+      const list = [];
+      let cur = (birthDate && !isNaN(birthDate.getTime())) ? new Date(birthDate.getTime()) : new Date();
+
+      for (let i = 0; i < 9; i++) {
+        const mIdx = (lordIndex + i) % 9;
+        const mLord = DASHA_LORDS[mIdx] || DASHA_LORDS[0];
+        const dur = (i === 0) ? balanceYears : mLord.years;
+        let mEnd = new Date(cur.getTime() + dur * 365.25 * 86400000);
+        const antars = [];
+        let aCur = new Date(cur.getTime());
+        for (let j = 0; j < 9; j++) {
+          const aIdx = (mIdx + j) % 9;
+          const aLord = DASHA_LORDS[aIdx] || DASHA_LORDS[0];
+          const aDur = (mLord.years * aLord.years) / 120.0 * (dur / mLord.years);
+          let aEnd = new Date(aCur.getTime() + aDur * 365.25 * 86400000);
+          antars.push({ lord: aLord.name, start: fmt(aCur), end: fmt(aEnd) });
+          aCur = aEnd;
+        }
+        list.push({ lord: mLord.name, years: dur.toFixed(2), start: fmt(cur), end: fmt(mEnd), antars });
+        cur = mEnd;
+      }
+      return list;
+    }
+
+    function calculateBhavaBala(p) {
+      const lSign = calculateVarga(p.Lagna, 1);
+      const baseScores = [502.37, 487.50, 407.00, 395.85, 469.95, 510.10, 551.86, 470.36, 448.04, 444.33, 501.83, 419.33];
+      const significations = ['ကိုယ်ခန္ဓာ၊ စရိုက်နှင့် အသက်ရှည်မှု', 'ဓနဥစ္စာ၊ မိသားစုနှင့် စကားပြော', 'မွေးချင်း၊ ရဲရင့်မှုနှင့် ဆက်သွယ်ရေး', 'မိခင်၊ နေအိမ်၊ ယာဉ်ရထားနှင့် စိတ်ချမ်းသာမှု', 'ဉာဏ်ပညာ၊ သားသမီးနှင့် ပညာရေး', 'ရန်သူ၊ ရောဂါ၊ အကြွေးနှင့် အတိုက်အခိုက်', 'အိမ်ထောင်ဖက်၊ အချစ်ရေးနှင့် စီးပွားဖက်', 'အသက်ဘေး၊ လျှို့ဝှက်ချက်နှင့် အမွေအနှစ်', 'ကံကြမ္မာ၊ ဖခင်၊ တရားဓမ္မနှင့် ဘာသာရေး', 'အလုပ်အကိုင်၊ ဂုဏ်သိက္ခာနှင့် အာဏာ', 'လာဘ်လာဘ၊ မိတ်ဆွေနှင့် ဆန္ဒပြည့်ဝမှု', 'ဆုံးရှုံးမှု၊ နိုင်ငံရပ်ခြားနှင့် တရားမွေ့လျော်မှု'];
+      const bhavas = [];
+      for (let i = 0; i < 12; i++) {
+        const rasiIdx = (lSign + i) % 12;
+        const score = baseScores[i];
+        bhavas.push({ house: i + 1, rasi: RASI_NAMES_EN[rasiIdx], score, rupas: (score / 60).toFixed(2), pct: Math.min(100, Math.round((score / 551.86) * 100)), desc: significations[i] });
+      }
+      const sorted = [...bhavas].sort((a, b) => b.score - a.score);
+      bhavas.forEach((b) => { b.rank = sorted.findIndex((s) => s.house === b.house) + 1; });
+      return { bhavas, sorted };
+    }
+
+    function checkAllYogas(p) {
+      const yogas = [];
+      const getH = (pl, l) => ((Math.floor(pl / 30) - Math.floor(l / 30) + 12) % 12) + 1;
+      const mSign = Math.floor(p.Moon / 30), sSign = Math.floor(p.Sun / 30), jSign = Math.floor(p.Jupiter / 30), vSign = Math.floor(p.Venus / 30), maSign = Math.floor(p.Mars / 30), meSign = Math.floor(p.Mercury / 30), saSign = Math.floor(p.Saturn / 30);
+      const jFromM = ((jSign - mSign + 12) % 12) + 1;
+      const jHouse = getH(p.Jupiter, p.Lagna), vHouse = getH(p.Venus, p.Lagna), meHouse = getH(p.Mercury, p.Lagna), maHouse = getH(p.Mars, p.Lagna), saHouse = getH(p.Saturn, p.Lagna);
+
+      if ([1, 4, 7, 10].indexOf(jFromM) !== -1) yogas.push({ name: 'Gaja-Kesari Yoga (ဂဇကေသရီ)', cause: 'ကြာသပတေးသည် စန္ဒြာမှ ကိန်းအိမ်တွင် ရှိခြင်း', result: 'အသိဉာဏ်ကြီးမားခြင်း၊ ကျော်စောထင်ရှားပြီး ဩဇာအာဏာရှိခြင်း။' });
+      if (sSign === meSign) yogas.push({ name: 'Budha-Aaditya Yoga (ဗုဒ္ဓါဒိတျ)', cause: 'တနင်္ဂနွေနှင့် ဗုဒ္ဓဟူး ပူးယှဉ်တည်ရှိခြင်း', result: 'ထက်မြက်သော ဉာဏ်ပညာရှိခြင်း၊ စာပေနှင့် နည်းပညာထူးချွန်ခြင်း။' });
+      if (mSign === maSign) yogas.push({ name: 'Chandra-Mangala Yoga (စန္ဒြမင်္ဂလာ)', cause: 'စန္ဒြာနှင့် အင်္ဂါ ပူးယှဉ်တည်ရှိခြင်း', result: 'စီးပွားဥစ္စာ ရှာဖွေရာတွင် အထူးအောင်မြင်ပြီး ဓနဥစ္စာကြွယ်ဝခြင်း။' });
+      if ([10].indexOf(jHouse) !== -1 || [10].indexOf(vHouse) !== -1 || [10].indexOf(meHouse) !== -1) yogas.push({ name: 'Amala Yoga (အမလ)', cause: 'လဂ်မှ ၁၀ တန့်အိမ်တွင် သောမဂြိုဟ် တည်ရှိခြင်း', result: 'သန့်ရှင်းစင်ကြယ်သော ဂုဏ်သတင်းကျော်စောခြင်း။' });
+      if ([3, 8, 11].indexOf(jSign) !== -1 && [1, 4, 7, 10].indexOf(jHouse) !== -1) yogas.push({ name: 'Hamsa Yoga (ဟံသ မဟာပုရုသ)', cause: 'ကြာသပတေးသည် မိမိအိမ်/ဥစ္စအိမ်၌ ကိန်းအိမ်တည်ခြင်း', result: 'တရားဓမ္မ၌ မွေ့လျော်ပြီး မင်းစိုးရာဇာတို့၏ ချီးမြှောက်ခံရခြင်း။' });
+      if ([1, 6, 11].indexOf(vSign) !== -1 && [1, 4, 7, 10].indexOf(vHouse) !== -1) yogas.push({ name: 'Malavya Yoga (မာလဝျ မဟာပုရုသ)', cause: 'သောကြာသည် မိမိအိမ်/ဥစ္စအိမ်၌ ကိန်းအိမ်တည်ခြင်း', result: 'အနုပညာ၊ ဇိမ်ခံပစ္စည်းနှင့် အိမ်ထောင်ဘက် သုခပြည့်စုံခြင်း။' });
+      if ([0, 7, 9].indexOf(maSign) !== -1 && [1, 4, 7, 10].indexOf(maHouse) !== -1) yogas.push({ name: 'Ruchaka Yoga (ရုစက မဟာပုရုသ)', cause: 'အင်္ဂါသည် မိမိအိမ်/ဥစ္စအိမ်၌ ကိန်းအိမ်တည်ခြင်း', result: 'ရဲရင့်သော သတ္တိရှိခြင်း၊ ခေါင်းဆောင်မှုစွမ်းရည် ထူးချွန်ခြင်း။' });
+      if ([2, 5].indexOf(meSign) !== -1 && [1, 4, 7, 10].indexOf(meHouse) !== -1) yogas.push({ name: 'Bhadra Yoga (ဘဒြ မဟာပုရုသ)', cause: 'ဗုဒ္ဓဟူးသည် မိမိအိမ်၌ ကိန်းအိမ်တည်ခြင်း', result: 'စကားပြောစွမ်းရည်နှင့် ဉာဏ်ပညာ ကြီးမားခြင်း။' });
+      if ([6, 9, 10].indexOf(saSign) !== -1 && [1, 4, 7, 10].indexOf(saHouse) !== -1) yogas.push({ name: 'Sasa Yoga (သသ မဟာပုရုသ)', cause: 'စနေသည် မိမိအိမ်/ဥစ္စအိမ်၌ ကိန်းအိမ်တည်ခြင်း', result: 'လူအများအပေါ် အုပ်ချုပ်စိုးမိုးနိုင်ပြီး အသက်ကြီးလေ အောင်မြင်လေဖြစ်ခြင်း။' });
+      if ([sSign, maSign, meSign, jSign, vSign, saSign].some((s) => s === (mSign + 1) % 12)) yogas.push({ name: 'Sunapha Yoga (သုနာဖ)', cause: 'စန္ဒြာမှ ၂ တန့်တွင် နေ/ရာဟု/ကိတ် မဟုတ်သော ဂြိုဟ်ရှိခြင်း', result: 'ကိုယ်ပိုင်ဉာဏ်ဖြင့် ဓနဥစ္စာ စုဆောင်းနိုင်ခြင်း။' });
+      if ([sSign, maSign, meSign, jSign, vSign, saSign].some((s) => s === (mSign + 11) % 12)) yogas.push({ name: 'Anapha Yoga (အနဖ)', cause: 'စန္ဒြာမှ ၁၂ တန့်တွင် ဂြိုဟ်ရှိခြင်း', result: 'ကိုယ်ကျင့်တရား ကောင်းမွန်ပြီး စိတ်အေးချမ်းသာယာစွာ နေရခြင်း။' });
+      return yogas;
+    }
+
+    function generateLifeOverview(birthPlanets) {
+      if (!birthPlanets || typeof birthPlanets.Lagna !== 'number') {
+        return { netWorthTier: '', netWorthDesc: '', pillars: {} };
+      }
+      const lagnaSign = calculateVarga(birthPlanets.Lagna, 1);
+      const getHouse = (pKey) => ((calculateVarga(birthPlanets[pKey] || 0, 1) - lagnaSign + 12) % 12) + 1;
+
+      const jupH = getHouse('Jupiter'), venH = getHouse('Venus'), mercH = getHouse('Mercury');
+      const sunH = getHouse('Sun'), satH = getHouse('Saturn');
+
+      let wealthPoints = 0;
+      if ([1, 2, 5, 9, 10, 11].indexOf(jupH) !== -1) wealthPoints += 3;
+      if ([1, 2, 4, 5, 7, 9, 11].indexOf(venH) !== -1) wealthPoints += 2.5;
+      if ([2, 5, 9, 11].indexOf(mercH) !== -1) wealthPoints += 2;
+      if ([10, 11].indexOf(satH) !== -1) wealthPoints += 2;
+      if ([10, 11].indexOf(sunH) !== -1) wealthPoints += 2;
+
+      let netWorthTier = 'လူလတ်တန်းစား အထက် / ကိုယ်ပိုင်စီးပွားခိုင်မာသူ (Upper-Middle Affluent)';
+      let netWorthDesc = 'မိမိ၏ ကိုယ်ပိုင်ကြိုးစားအားထုတ်မှုဖြင့် ဓနဥစ္စာကို ခိုင်မာစွာ တည်ဆောက်နိုင်မည်။ ရေရှည်ရင်းနှီးမြှုပ်နှံမှုနှင့် တိုက်တာမြေယာများ ပိုင်ဆိုင်နိုင်သော ကံဇာတာရှိသည်။';
+
+      if (wealthPoints >= 9) {
+        netWorthTier = 'အထက်တန်းလွှာ သူဌေးအဆင့် (High Wealth / Wealthy Elite)';
+        netWorthDesc = 'စီးပွားဥစ္စာ ကြွယ်ဝချမ်းသာနိုင်သော မဟာဓနကံ ထူးခြားစွာ ပါရှိသည်။ ဝင်ငွေလမ်းကြောင်း မျိုးစုံမှ စီးဆင်းလာမည်ဖြစ်ပြီး အဆင့်မြင့် စည်းစိမ်ချမ်းသာများကို ခံစားရမည်။';
+      } else if (wealthPoints <= 4) {
+        netWorthTier = 'အလယ်အလတ် သက်သောင့်သက်သာ ဘဝ (Moderate & Stable Comfort)';
+        netWorthDesc = 'ဝင်ငွေနှင့် ထွက်ငွေကို စနစ်တကျ စီမံခန့်ခွဲခြင်းဖြင့် အေးချမ်းတည်ငြိမ်သော ဘဝစီးပွားကို တည်ဆောက်နိုင်မည်။';
+      }
+
+      const pillars = {
+        lifePath: 'လဂ်သည် ' + RASI_NAMES_EN[lagnaSign] + ' ဖြစ်သဖြင့် မိမိကိုယ်ကို အားကိုးလိုစိတ် မြင့်မားပြီး ရည်မှန်းချက်ကြီးမားသော ဘဝခရီးကို လျှောက်လှမ်းရမည်။ အသက် ၃၀ ကျော်အရွယ်မှစတင်၍ ဘဝအခြေကျကာ ပိုမိုတည်ငြိမ်လာမည်။',
+        career: ([10, 11, 1].indexOf(sunH) !== -1 || [10, 11].indexOf(satH) !== -1)
+          ? 'ခေါင်းဆောင်မှု၊ စီမံခန့်ခွဲမှု၊ အုပ်ချုပ်ရေး သို့မဟုတ် ကိုယ်ပိုင်လုပ်ငန်း ဦးဆောင်သူအဖြစ် အထူးအောင်မြင်မည်။ လူအများ၏ အသိအမှတ်ပြုခြင်းကို ခံရမည်။'
+          : 'ပညာရပ်ဆိုင်ရာ၊ အကြံပေး၊ ဝန်ဆောင်မှုနှင့် ဆက်သွယ်ရေး လုပ်ငန်းများတွင် ထူးချွန်စွာ အောင်မြင်မည်။',
+        wealth: 'ဒုတိယအိမ်နှင့် ဧကာဒသမအိမ် (ဝင်ငွေနှင့် စုဆောင်းမှု) အခြေအနေအရ ဝင်ငွေစီးဆင်းမှု ကောင်းမွန်မည်။ စီးပွားရေးတွင် ရေရှည်ရင်းနှီးမြှုပ်နှံမှုများက အကျိုးအမြတ် အများဆုံး ပေးမည်။',
+        education: ([4, 5].indexOf(mercH) !== -1 || [4, 5, 9].indexOf(jupH) !== -1)
+          ? 'ထိုးထွင်းဉာဏ်ကောင်းမွန်ပြီး အဆင့်မြင့်ပညာရပ်များ၊ ဘာသာစကားနှင့် သုတေသနများတွင် အလွယ်တကူ ထူးချွန်တတ်ကျွမ်းနိုင်သော ပါရမီပါရှိသည်။'
+          : 'လက်တွေ့အသုံးချ ပညာရပ်များနှင့် လုပ်ငန်းခွင် အတွေ့အကြုံများမှတစ်ဆင့် အသိဉာဏ် ဗဟုသုတ ကြွယ်ဝလာမည်။',
+        love: ([5].indexOf(venH) !== -1 || [5].indexOf(jupH) !== -1)
+          ? 'အချစ်ရေးတွင် စိတ်ခံစားမှု နက်ရှိုင်းပြီး ရိုမန့်တစ်ဆန်သူ ဖြစ်သည်။ မေတ္တာရေးတွင် ကံကောင်းတတ်သည်။'
+          : 'အချစ်ရေးထက် ဘဝလက်တွေ့ တည်ငြိမ်ရေးကို ပိုမိုဦးစားပေး စဉ်းစားတတ်သော သဘောရှိသည်။',
+        marriage: ([7].indexOf(venH) !== -1 || [7].indexOf(jupH) !== -1 || [7].indexOf(mercH) !== -1)
+          ? 'အိမ်ထောင်ဘက်သည် ပညာတတ်၊ ဂုဏ်သရေရှိပြီး မိမိဘဝစီးပွားအတွက် များစွာ အထောက်အကူ ပေးနိုင်သူ ဖြစ်မည်။ အိမ်ထောင်ရေး ခိုင်မြဲမည်။'
+          : 'အိမ်ထောင်ရေးတွင် အပြန်အလှန် ညှိနှိုင်းနားလည်မှုဖြင့် လက်တွဲတည်ဆောက်ရမည်။ သီးခံမှုက အိမ်ထောင်ရေးကို သာယာစေမည်။'
+      };
+
+      return { netWorthTier, netWorthDesc, pillars };
+    }
+
+    function analyzeConjunctionsAndAspects(p) {
+      if (!p) return [];
+      const results = [];
+      const planetsList = ['Sun', 'Moon', 'Mars', 'Mercury', 'Jupiter', 'Venus', 'Saturn', 'Rahu', 'Ketu'];
+      const signMap = {};
+
+      planetsList.forEach((k) => {
+        if (typeof p[k] !== 'number') return;
+        const s = calculateVarga(p[k], 1);
+        if (!signMap[s]) signMap[s] = [];
+        signMap[s].push(k);
+      });
+
+      Object.keys(signMap).forEach((s) => {
+        const list = signMap[s];
+        if (list.length >= 2) {
+          const names = list.map((k) => PLANET_SHORT[k] + ' (' + k + ')').join(' + ');
+          let meaning = 'ဂြိုဟ်စွမ်းအင်များ ပေါင်းစပ်လှုပ်ရှားနေသော အနေအထား ဖြစ်သည်။';
+          if (list.indexOf('Sun') !== -1 && list.indexOf('Mercury') !== -1) meaning = 'ဗုဒ္ဓါဒိတျ အကျိုးပေးသဖြင့် အသိဉာဏ် ထက်မြက်ပြီး စီမံခန့်ခွဲမှု ထူးချွန်စေမည်။';
+          if (list.indexOf('Moon') !== -1 && list.indexOf('Mars') !== -1) meaning = 'စန္ဒြမင်္ဂလာ အကျိုးပေးသဖြင့် စီးပွားဥစ္စာ ရှာဖွေရာတွင် အထူးပေါက်မြောက် အောင်မြင်စေမည်။';
+          if (list.indexOf('Jupiter') !== -1 && list.indexOf('Moon') !== -1) meaning = 'ဂဇကေသရီ အကျိုးပေးသဖြင့် ပညာဉာဏ်၊ ဩဇာအာဏာနှင့် ကျော်ကြားမှု ရရှိစေမည်။';
+          if (list.indexOf('Venus') !== -1 && list.indexOf('Mercury') !== -1) meaning = 'လက္ခမီနာရာယဏ အကျိုးပေးသဖြင့် အနုပညာ၊ ဉာဏ်ပညာနှင့် စည်းစိမ်ဥစ္စာ ပြည့်စုံစေမည်။';
+          results.push({
+            type: 'ဂြိုဟ်ပူးယှဉ်ခြင်း (Conjunction)',
+            title: names + ' [' + RASI_NAMES_EN[s] + ' အိမ်တွင် ပူးယှဉ်ခြင်း]',
+            desc: meaning
+          });
+        }
+      });
+
+      for (let i = 0; i < planetsList.length; i++) {
+        for (let j = i + 1; j < planetsList.length; j++) {
+          const p1 = planetsList[i], p2 = planetsList[j];
+          if (typeof p[p1] !== 'number' || typeof p[p2] !== 'number') continue;
+          const s1 = calculateVarga(p[p1], 1), s2 = calculateVarga(p[p2], 1);
+          if (Math.abs(s1 - s2) === 6) {
+            results.push({
+              type: 'သတ္တမ အပြန်အလှန်အမြင် (Mutual Aspect - 7th)',
+              title: p1 + ' နှင့် ' + p2 + ' မျက်နှာချင်းဆိုင် မြင်နေခြင်း',
+              desc: 'ဂြိုဟ်နှစ်လုံး အပြန်အလှန် အားပြိုင်သဟဇာတဖြစ်ကာ ဘဝကဏ္ဍနှစ်ခုကို တပြိုင်နက် ဟန်ချက်ညီအောင် လှုံ့ဆော်ပေးနေသည်။'
+            });
+          }
+        }
+      }
+
+      if (typeof p.Jupiter === 'number') {
+        const jSign = calculateVarga(p.Jupiter, 1);
+        const jAsp5 = (jSign + 4) % 12, jAsp9 = (jSign + 8) % 12;
+        planetsList.forEach((k) => {
+          if (k === 'Jupiter' || typeof p[k] !== 'number') return;
+          const s = calculateVarga(p[k], 1);
+          if (s === jAsp5 || s === jAsp9) {
+            results.push({
+              type: 'ဂုရု အထူးအမြင် (Jupiter Benefic Aspect)',
+              title: 'ကြာသပတေးက ' + k + ' ဂြိုဟ်ကို သောမအမြင်ဖြင့် မြင်ခြင်း',
+              desc: k + ' ၏ အကျိုးပေးစွမ်းရည်ကို ပိုမိုမြင့်မားစေပြီး အခက်အခဲများကို ပြေပျောက်စေသော အထောက်အပံ့ ရရှိသည်။'
+            });
+          }
+        });
+      }
+
+      return results;
+    }
+
+    function analyzeLiveTransit(birthPlanets, transitPlanets) {
+      if (!birthPlanets || !transitPlanets || typeof birthPlanets.Moon !== 'number') {
+        return { sadeSati: '', jupTransit: '', rahuTransit: '' };
+      }
+      const natalMoonSign = calculateVarga(birthPlanets.Moon, 1);
+      const transitSaturnSign = calculateVarga(transitPlanets.Saturn, 1);
+      const transitJupiterSign = calculateVarga(transitPlanets.Jupiter, 1);
+
+      const diffSat = (transitSaturnSign - natalMoonSign + 12) % 12;
+      const diffJup = (transitJupiterSign - natalMoonSign + 12) % 12;
+
+      let sadeSati = 'လက်ရှိတွင် ၇ နှစ်ခွဲ စနေခေတ်ဆိုး (Sade Sati) မှ လွတ်ကင်းနေပါသည်။';
+      if (diffSat === 11) sadeSati = 'စနေသည် မွေးစန်း၏ ၁၂ တန့်သို့ ကောဇာရောက်နေသဖြင့် ၇ နှစ်ခွဲ စနေကာလ (Sade Sati အစပိုင်း) ဖြစ်သည်။ အသုံးစရိတ်နှင့် စိတ်ဖိစီးမှု သတိပြုရမည်။';
+      if (diffSat === 0) sadeSati = 'စနေသည် မွေးစန်းပေါ်သို့ တိုက်ရိုက်ကောဇာစီးနင်းနေသဖြင့် (Sade Sati အလယ်ဗဟိုကာလ) ဖြစ်သည်။ စိတ်ရှည်သည်းခံပြီး ကျန်းမာရေး ဂရုပြုရမည်။';
+      if (diffSat === 1) sadeSati = 'စနေသည် မွေးစန်း၏ ၂ တန့်သို့ ရောက်နေသဖြင့် (Sade Sati နေထွက်ကာလ) ဖြစ်သည်။ ငွေကြေးနှင့် စကားပြောဆိုမှု သတိပြုရမည်။';
+
+      let jupTransit = 'ကြာသပတေး ကောဇာစီးမှုသည် အလယ်အလတ် တည်ငြိမ်သော အကျိုးပေး ရှိနေသည်။';
+      if ([1, 4, 6, 8, 10].indexOf(diffJup) !== -1) {
+        jupTransit = 'ကြာသပတေးဂြိုဟ်သည် မွေးစန်းမှ ကောင်းမွန်သော ကောဇာအိမ် (၂၊ ၅၊ ၇၊ ၉၊ ၁၁ တန့်) သို့ စီးနင်းနေသဖြင့် စီးပွားရေး၊ ငွေကြေးနှင့် ကံကြမ္မာ အခွင့်အလမ်းသစ်များ ပွင့်လန်းမည့် ကာလဖြစ်သည်။';
+      }
+
+      return {
+        sadeSati,
+        jupTransit,
+        rahuTransit: 'ကောဇာရာဟုသည် အပြောင်းအလဲနှင့် နယ်ပယ်သစ်များ စူးစမ်းရှာဖွေလိုသော စိတ်ဆန္ဒများကို လှုံ့ဆော်ပေးနေသည်။'
+      };
+    }
+
+    function generateLifetimeMilestones(birthDate, dashaTree, birthPlanets) {
+      const milestones = [];
+      const bYear = (birthDate && !isNaN(birthDate.getTime())) ? birthDate.getFullYear() : 2026;
+
+      milestones.push({
+        phase: 'ပညာရေး အထွတ်အထိပ်နှင့် ဘွဲ့ရရှိမည့်ကာလ',
+        age: '၁၈ - ၂၄ နှစ်အရွယ်',
+        yearRange: `${bYear + 18} - ${bYear + 24}`,
+        desc: 'အဆင့်မြင့်ပညာရပ်များ သင်ယူအောင်မြင်ခြင်း၊ ဘဝလမ်းကြောင်းအတွက် အရေးပါသော အခြေခံပညာ အရည်အချင်းများ ရရှိမည့် အချိန်ဖြစ်သည်။'
+      });
+
+      milestones.push({
+        phase: 'ကိုယ်ပိုင်ဝင်ငွေ စတင်ရရှိခြင်းနှင့် အလုပ်အကိုင် အခြေကျခြင်း',
+        age: '၂၃ - ၂၈ နှစ်အရွယ်',
+        yearRange: `${bYear + 23} - ${bYear + 28}`,
+        desc: 'မိမိခြေထောက်ပေါ် စတင်ရပ်တည်နိုင်ပြီး ကိုယ်ပိုင်လုပ်ငန်း သို့မဟုတ် အသက်မွေးဝမ်းကျောင်းတွင် တာဝန်ယူစတင်ထမ်းဆောင်မည့် ကာလဖြစ်သည်။'
+      });
+
+      milestones.push({
+        phase: 'အိမ်ထောင်ပြုခြင်းနှင့် ဘဝလက်တွဲဖော် ရွေးချယ်မှု',
+        age: '၂၆ - ၃၃ နှစ်အရွယ်',
+        yearRange: `${bYear + 26} - ${bYear + 33}`,
+        desc: 'ဘဝလက်တွဲဖော်နှင့် တွေ့ဆုံပေါင်းဖက်ရမည့် အချိန်ဖြစ်ပြီး အိမ်ထောင်ပြုခြင်းဖြင့် ဘဝတည်ငြိမ်မှုနှင့် စည်းစိမ်ဥစ္စာ ပိုမိုတိုးတက်လာမည်။'
+      });
+
+      milestones.push({
+        phase: 'အိမ်ခြံမြေ၊ တိုက်တာနှင့် ယာဉ်ရထား ပိုင်ဆိုင်ခွင့်',
+        age: '၃၂ - ၄၀ နှစ်အရွယ်',
+        yearRange: `${bYear + 32} - ${bYear + 40}`,
+        desc: 'ကိုယ်ပိုင်အမည်ပေါက် နေအိမ်၊ တိုက်တာ သို့မဟုတ် ခိုင်မာသော အိမ်ခြံမြေ ပိုင်ဆိုင်မှုများ စတင်တည်ဆောက် အကောင်အထည်ဖော်နိုင်မည့် ရွှေရောင်ကာလဖြစ်သည်။'
+      });
+
+      milestones.push({
+        phase: 'စီးပွားရေး အထွတ်အထိပ်နှင့် သြဇာအာဏာ ထင်ရှားခြင်း',
+        age: '၄၂ - ၅၂ နှစ်အရွယ်',
+        yearRange: `${bYear + 42} - ${bYear + 52}`,
+        desc: 'လုပ်ငန်းခွင်နှင့် လူမှုအသိုင်းအဝိုင်းတွင် ခေါင်းဆောင်မှု ရရှိခြင်း၊ ငွေကြေးဓနဥစ္စာ အခိုင်မာဆုံး စုဆောင်းမိမည့် ဘဝအမြင့်ဆုံး အချိန်ဖြစ်သည်။'
+      });
+
+      milestones.push({
+        phase: 'အေးချမ်းသာယာမှုနှင့် တရားဓမ္မ၌ မွေ့လျော်ခြင်း',
+        age: '၅၈ နှစ်နှင့်အထက်',
+        yearRange: `${bYear + 58} နောက်ပိုင်း`,
+        desc: 'လောကီတာဝန်များ ပြည့်စုံပြီးနောက် နောင်မျိုးဆက်များကို လက်ဆင့်ကမ်း အကြံပေးခြင်းနှင့် စိတ်နှလုံး အေးချမ်းစွာ တရားဘာဝနာ ပွားများနိုင်မည့် ကာလဖြစ်သည်။'
+      });
+
+      return milestones;
+    }
+
+    function generateAnnualForecast(birthDate, birthPlanets, transitPlanets) {
+      const now = new Date();
+      const bMonth = (birthDate && !isNaN(birthDate.getTime())) ? birthDate.getMonth() : now.getMonth();
+      const bDay = (birthDate && !isNaN(birthDate.getTime())) ? birthDate.getDate() : now.getDate();
+
+      let startYear = now.getFullYear();
+      const currentBdayThisYear = new Date(startYear, bMonth, bDay);
+      if (now < currentBdayThisYear) {
+        startYear -= 1;
+      }
+      const endYear = startYear + 1;
+
+      const monthsData = [];
+      const myanmarMonthNames = ['ဇန်နဝါရီ', 'ဖေဖော်ဝါရီ', 'မတ်', 'ဧပြီ', 'မေ', 'ဇွန်', 'ဇူလိုင်', 'သြဂုတ်', 'စက်တင်ဘာ', 'အောက်တိုဘာ', 'နိုဝင်ဘာ', 'ဒီဇင်ဘာ'];
+
+      for (let i = 0; i < 12; i++) {
+        const mIdx = (bMonth + i) % 12;
+        const yr = (bMonth + i >= 12) ? endYear : startYear;
+
+        let theme = 'တည်ငြိမ်တိုးတက်သော ကာလ';
+        let badge = 'သာမန်';
+        let badgeColor = 'bg-slate-100 text-slate-700';
+
+        if ([0, 4, 9].indexOf(i) !== -1) {
+          theme = 'စီးပွားငွေကြေးနှင့် အလုပ်အကိုင် အခွင့်အလမ်းသစ်များ ပွင့်လန်းမည့် အထူးကောင်းမွန်သောလ။';
+          badge = 'အထူးကောင်း';
+          badgeColor = 'bg-emerald-100 text-emerald-800 font-bold';
+        } else if ([2, 6, 8].indexOf(i) !== -1) {
+          theme = 'ခရီးသွားလာမှု၊ အပြောင်းအလဲနှင့် ဆက်သွယ်ရေး လုပ်ငန်းများတွင် အကျိုးအမြတ် ရရှိမည့်လ။';
+          badge = 'တိုးတက်';
+          badgeColor = 'bg-blue-100 text-blue-800';
+        } else if ([5, 11].indexOf(i) !== -1) {
+          theme = 'ကျန်းမာရေးနှင့် စိတ်ဖိစီးမှု သတိပြုသင့်ပြီး ငွေကြေးအသုံးအစွဲ စနစ်တကျ စီမံသင့်သောလ။';
+          badge = 'သတိပြု';
+          badgeColor = 'bg-amber-100 text-amber-800 font-bold';
+        } else {
+          theme = 'မိသားစု၊ မိတ်ဆွေများနှင့် အဆင်ပြေချောမွေ့ပြီး စိတ်ချမ်းသာမှု ရရှိမည့် ပုံမှန်တည်ငြိမ်သောလ။';
+          badge = 'အဆင်ပြေ';
+          badgeColor = 'bg-slate-100 text-slate-700';
+        }
+
+        monthsData.push({
+          num: i + 1,
+          monthName: `${myanmarMonthNames[mIdx]} (${yr})`,
+          dateRange: `${bDay} ${myanmarMonthNames[mIdx]} မှ ${bDay} ${myanmarMonthNames[(mIdx + 1) % 12]} ထိ`,
+          theme,
+          badge,
+          badgeColor
+        });
+      }
+
+      return {
+        annualCycle: `${bDay} ${myanmarMonthNames[bMonth]} ${startYear} မှ ${bDay} ${myanmarMonthNames[bMonth]} ${endYear} အထိ (၁ နှစ်စာ)`,
+        months: monthsData
+      };
+    }
+
+    function calculateSynastry(bPlanets, gPlanets) {
+      const bMoon = bPlanets ? bPlanets.Moon : 0;
+      const gMoon = gPlanets ? gPlanets.Moon : 0;
+      const bNak = Math.floor(norm360(bMoon) / (360 / 27));
+      const gNak = Math.floor(norm360(gMoon) / (360 / 27));
+      const bSign = Math.floor(norm360(bMoon) / 30);
+      const gSign = Math.floor(norm360(gMoon) / 30);
+      const varna = (bSign % 4 >= gSign % 4) ? 1 : 0;
+      const vashya = (bSign === gSign || Math.abs(bSign - gSign) === 6) ? 2 : 1;
+      const diffNak = (gNak - bNak + 27) % 27;
+      const tara = ([2, 4, 6, 8].indexOf(diffNak % 9) !== -1) ? 3 : 1.5;
+      const yoni = ((bNak % 14) === (gNak % 14)) ? 4 : 2;
+      const maitri = (bSign === gSign || (bSign + gSign) % 2 === 0) ? 5 : 3;
+      const gana = (bNak % 3 === gNak % 3) ? 6 : (bNak % 3 === 2 && gNak % 3 === 0 ? 0 : 3);
+      const bhakoot = ([1, 7, 3, 11, 4, 10].indexOf((gSign - bSign + 12) % 12 + 1) !== -1) ? 7 : 0;
+      const nadi = (bNak % 3 !== gNak % 3) ? 8 : 0;
+      const total = varna + vashya + tara + yoni + maitri + gana + bhakoot + nadi;
+
+      const attractionPct = Math.min(98, Math.max(48, Math.floor(60 + yoni * 6 + vashya * 5)));
+      const lovePct = Math.min(96, Math.max(45, Math.floor((maitri / 5) * 45 + (bhakoot / 7) * 35 + 15)));
+      const dashaRelPct = Math.min(95, Math.max(50, Math.floor(55 + (gana / 6) * 20 + (vashya / 2) * 20)));
+      const sexualPct = Math.min(98, Math.max(40, Math.floor((yoni / 4) * 60 + (vashya / 2) * 20 + 15)));
+
+      const curY = new Date().getFullYear();
+      return {
+        total,
+        verdict: total >= 18 ? 'လက်ထပ်ထိမ်းမြားရန် သင့်တော်ပါသည် (Compatible)' : 'သတိပြုဆင်ခြင်သင့်ပါသည် (Low Compatibility)',
+        attractionPct,
+        lovePct,
+        dashaRelPct,
+        sexualPct,
+        datingTiming: `${curY} - ${curY + 2} ခုနှစ်အတွင်း`,
+        intimacyTiming: `${curY + 1} - ${curY + 3} ခုနှစ်အတွင်း`,
+        marriageTiming: total >= 18 ? `${curY + 2} - ${curY + 5} ခုနှစ်အတွင်း` : `${curY + 3} ခုနှစ်နောက်ပိုင်း`,
+        karmicBond: total >= 25 ? 'ရှေးရေစက် အလွန်ထူးခြားစွာ ပါရှိသည် (လက်တွဲမြဲမည့် အိမ်ထောင်ဖက်)' : (total >= 18 ? 'ရေစက်အလယ်အလတ် ပါရှိသည် (အပြန်အလှန် ညှိနှိုင်းမှုဖြင့် အောင်မြင်မည်)' : 'ရှေးရေစက် အားနည်းသည် (သတိပြုဆင်ခြင်သင့်)'),
+        breakdown: [
+          { k: 'Varna (ဝဏ္ဏ)', score: varna, max: 1, desc: 'အလုပ်အကိုင်၊ စရိုက်အဆင့်အတန်း လိုက်ဖက်မှု' },
+          { k: 'Vashya (ဝသျှ)', score: vashya, max: 2, desc: 'အပြန်အလှန် ဆွဲဆောင်ထိန်းကျောင်းနိုင်မှု' },
+          { k: 'Tara (တာရာ)', score: tara, max: 3, desc: 'ကံကြမ္မာ၊ အသက်ရှည်မှုနှင့် ကျန်းမာရေး' },
+          { k: 'Yoni (ယောနိ)', score: yoni, max: 4, desc: 'သဘာဝဓာတ်၊ လိင်ပိုင်းဆိုင်ရာ လိုက်ဖက်မှု' },
+          { k: 'Graha Maitri (ဂြိုဟ်မိတ်)', score: maitri, max: 5, desc: 'စိတ်ပိုင်းဆိုင်ရာ ချစ်ခင်ကြင်နာမှု' },
+          { k: 'Gana (ဂဏ)', score: gana, max: 6, desc: 'ဗီဇစရိုက် (ဒေဝ၊ မနုဿ၊ ရက္ခိုသ်)' },
+          { k: 'Bhakoot (ဘကုတ)', score: bhakoot, max: 7, desc: 'အိမ်ထောင်ရေး ကြီးပွားချမ်းသာမှု' },
+          { k: 'Nadi (နာဒီ)', score: nadi, max: 8, desc: 'မျိုးရိုးဗီဇနှင့် ကျန်းမာရေးဓာတ် သဟဇာတ' }
+        ]
+      };
+    }
+
+    function detectPrashnaIntent(text) {
+      const t = (text || '').toLowerCase();
+      if (/စာမေးပွဲ|ပညာ|ကျောင်း|ဘွဲ့|အောင်|စာသင်|စာမေး/.test(t)) return 'exam';
+      if (/အလုပ်|ရာထူး|ကုမ္ပဏီ|အင်တာဗျူး|လုပ်ငန်း|လစာ|ရာထူးတိုး/.test(t)) return 'career';
+      if (/နိုင်ငံခြား|ဗီဇာ|ခရီး|သံရုံး|လေယာဉ်|passport|oversea/.test(t)) return 'travel';
+      if (/ချစ်|ရည်းစား|အိမ်ထောင်|မင်္ဂလာ|လက်ထပ်|မေတ္တာ|ပေါင်းရ/.test(t)) return 'love';
+      if (/ငွေ|အကြွေး|လာဘ်|အရောင်း|အမြတ်|စီးပွား|ကြွေး/.test(t)) return 'wealth';
+      if (/ကျန်းမာ|ရောဂါ|ဆေး|ခွဲစိတ်|ဖျား|နာ|အနာ/.test(t)) return 'health';
+      if (/အိမ်|ခြံ|မြေ|ကား|တိုက်|ဆိုင်|ပိုင်ဆိုင်/.test(t)) return 'property';
+      return 'general';
+    }
+
+    function calculatePrashnaResult(queryText, horaryNum, birthPlanets, transitPlanets, dashaTree) {
+      const intent = detectPrashnaIntent(queryText);
+      const hNum = parseInt(horaryNum, 10) || 108;
+      const qSign = (hNum * 7) % 12;
+
+      const tMoonSign = calculateVarga(transitPlanets ? transitPlanets.Moon : 0, 1);
+      const tJupSign = calculateVarga(transitPlanets ? transitPlanets.Jupiter : 0, 1);
+      const bMoonSign = calculateVarga(birthPlanets ? birthPlanets.Moon : 0, 1);
+      const bLagnaSign = calculateVarga(birthPlanets ? birthPlanets.Lagna : 0, 1);
+
+      const queryConfigs = {
+        exam: {
+          title: 'စာမေးပွဲ / ပညာရေး ကံကြမ္မာ အဖြေ',
+          varga: 24, karaka: 'Mercury',
+          successDesc: 'မေးမြန်းထားသော စာမေးပွဲ/ပညာရေးကိစ္စ မုချ အောင်မြင်ပါမည်။ မူရင်းမွေးဇာတာနှင့် ဟူးရားအမြင် အထူးအားကောင်းနေပါသည်။',
+          cautionDesc: 'စာမေးပွဲအတွက် အာရုံစိုက်မှု အနည်းငယ် လျော့နည်းနိုင်သဖြင့် အထူးကြိုးစားအားထုတ်ရန် လိုအပ်ပါသည်။'
+        },
+        career: {
+          title: 'အလုပ်အကိုင် / ရာထူးတိုးတက်မှု အဖြေ',
+          varga: 10, karaka: 'Sun',
+          successDesc: 'မျှော်လင့်ထားသော အလုပ်အကိုင် သို့မဟုတ် ရာထူးတိုးတက်ခွင့် အောင်မြင်စွာ ရရှိပါမည်။ အထက်လူကြီးများ၏ ထောက်ခံမှုကို ရရှိမည်။',
+          cautionDesc: 'လုပ်ငန်းခွင်တွင် အပြိုင်အဆိုင် အနည်းငယ်ရှိနိုင်ပြီး အချိန်ကာလ အနည်းငယ် စောင့်ဆိုင်းရနိုင်ပါသည်။'
+        },
+        travel: {
+          title: 'နိုင်ငံရပ်ခြား / ဗီဇာ ခရီးစဉ် အဖြေ',
+          varga: 4, karaka: 'Rahu',
+          successDesc: 'နိုင်ငံရပ်ခြား ဗီဇာ၊ ခရီးစဉ်နှင့် အခြေချခွင့်များ အဆင်ပြေချောမွေ့စွာ ရရှိပါမည်။ မျှော်လင့်ချက် ပြည့်ဝပါမည်။',
+          cautionDesc: 'စာရွက်စာတမ်း အထောက်အထားများ ပိုမိုစေ့စပ်ရန် လိုအပ်ပြီး အနည်းငယ် နှောင့်နှေးကြန့်ကြာမှု ဖြစ်တတ်သည်။'
+        },
+        love: {
+          title: 'အချစ်ရေး / အိမ်ထောင်ဘက် ပေါင်းဖက်ခွင့် အဖြေ',
+          varga: 9, karaka: 'Venus',
+          successDesc: 'မေးမြန်းထားသော ချစ်သူ/အိမ်ထောင်ဘက်နှင့် အဆင်ပြေစွာ ပေါင်းဖက်ခွင့် ရရှိပါမည်။ မေတ္တာရေး ကံဇာတာ အားကောင်းပါသည်။',
+          cautionDesc: 'နှစ်ဦးကြား နားလည်မှု ပိုမိုတည်ဆောက်ရန် လိုအပ်ပြီး စိတ်ရှည်သည်းခံမှုဖြင့် အဆင်ပြေနိုင်ပါမည်။'
+        },
+        wealth: {
+          title: 'ငွေကြေး / အကြွေး / လာဘ်လာဘ ရရှိမှု အဖြေ',
+          varga: 2, karaka: 'Jupiter',
+          successDesc: 'ငွေကြေးဝင်လမ်း ကောင်းမွန်ပြီး မျှော်လင့်ထားသော ငွေ သို့မဟုတ် အကြွေးများ အောင်မြင်စွာ ပြန်လည်ရရှိပါမည်။',
+          cautionDesc: 'ငွေကြေးရရှိရန် ကြိုးပမ်းရမှုများမည်ဖြစ်ပြီး အလောတကြီး မဆုံးဖြတ်ဘဲ စနစ်တကျ တောင်းခံသင့်သည်။'
+        },
+        health: {
+          title: 'ကျန်းမာရေး / ရောဂါပျောက်ကင်းမှု အဖြေ',
+          varga: 6, karaka: 'Sun',
+          successDesc: 'ကျန်းမာရေး ပြန်လည်ကောင်းမွန်လာမည်ဖြစ်ပြီး သင့်တော်သော ဆေးဝါးဓာတ်စာဖြင့် ရောဂါပျောက်ကင်း သက်သာပါမည်။',
+          cautionDesc: 'ကျန်းမာရေးအတွက် သက်ဆိုင်ရာ ဆရာဝန်နှင့် စနစ်တကျ ပြသကုသရန်နှင့် အနားယူရန် လိုအပ်ပါသည်။'
+        },
+        property: {
+          title: 'အိမ်ခြံမြေ / ယာဉ်ရထား / ပိုင်ဆိုင်မှု အဖြေ',
+          varga: 4, karaka: 'Mars',
+          successDesc: 'အိမ်ခြံမြေ၊ တိုက်တာ သို့မဟုတ် ယာဉ်ရထား အရောင်းအဝယ် အောင်မြင်စွာ အထမြောက်ပါမည်။',
+          cautionDesc: 'စာချုပ်စာတမ်း အထောက်အထားများကို သေချာစစ်ဆေးသင့်ပြီး အချိန်အနည်းငယ် ယူရပါမည်။'
+        },
+        general: {
+          title: 'အထွေထွေ ကိစ္စရပ် ဆန်းစစ်ချက် အဖြေ',
+          varga: 1, karaka: 'Jupiter',
+          successDesc: 'မေးမြန်းထားသော ကိစ္စရပ်သည် အချိန်တန်ပါက ကောင်းမွန်သော ရလဒ်ဖြင့် အောင်မြင်ပြီးမြောက်ပါမည်။',
+          cautionDesc: 'လက်ရှိအချိန်တွင် အတားအဆီး အနည်းငယ်ရှိနိုင်သဖြင့် ဇွဲရှိရှိ ဆက်လက်ကြိုးစားရန် လိုအပ်ပါသည်။'
+        }
+      };
+
+      const cfg = queryConfigs[intent] || queryConfigs.general;
+
+      let score = 55;
+      if (Math.abs(tMoonSign - qSign) % 4 === 0) score += 12;
+      if (Math.abs(tJupSign - qSign) % 4 === 0) score += 15;
+      if (Math.abs(bMoonSign - tMoonSign) % 2 === 0) score += 10;
+      if (Math.abs(bLagnaSign - qSign) % 3 === 0) score += 8;
+      score = Math.min(97, Math.max(36, score));
+
+      const isFavorable = score >= 62;
+      return {
+        queryText: queryText || 'မေးမြန်းထားသော ကိစ္စရပ်',
+        title: cfg.title,
+        score,
+        verdict: isFavorable ? '✅ အောင်မြင်နိုင်ပါသည် (YES)' : '⚠️ အခက်အခဲရှိနိုင်ပါသည် (NO / CHALLENGING)',
+        answerDesc: isFavorable ? cfg.successDesc : cfg.cautionDesc,
+        timingWindow: isFavorable ? 'လာမည့် ၁ လ မှ ၃ လ အတွင်း မုချ အကျိုးပေးပါမည်။' : 'လာမည့် ၆ လ နောက်ပိုင်းတွင် အခြေအနေ ပြန်လည်ကောင်းမွန်လာပါမည်။',
+        karaka: cfg.karaka,
+        vargaUsed: `D-${cfg.varga}`
+      };
+    }
+
+    function safeYear(val, fallback) {
+      const n = parseInt(val, 10);
+      if (isNaN(n) || n < 1900 || n > 2100) return fallback;
+      return n;
+    }
+    function safeMonth(val, fallback) {
+      const n = parseInt(val, 10);
+      if (isNaN(n) || n < 1 || n > 12) return fallback;
+      return n;
+    }
+    function safeDay(val, fallback) {
+      const n = parseInt(val, 10);
+      if (isNaN(n) || n < 1 || n > 31) return fallback;
+      return n;
+    }
+    function safeHour(val, fallback) {
+      const n = parseInt(val, 10);
+      if (isNaN(n) || n < 1 || n > 12) return fallback;
+      return n;
+    }
+    function safeMinute(val, fallback) {
+      const n = parseInt(val, 10);
+      if (isNaN(n) || n < 0 || n > 59) return fallback;
+      return n;
+    }
+
+    // ==========================================
+    // 3. MAIN REACT APP COMPONENT
+    // ==========================================
+    function MainApp() {
+      const [activeTab, setActiveTab] = useState('transit');
+      const [chartStyle, setChartStyle] = useState('east');
+      const [varga, setVarga] = useState(1);
+      const [isOverlayOn, setIsOverlayOn] = useState(false);
+      const [ayanamsa, setAyanamsa] = useState('lahiri');
+      const [nodeType, setNodeType] = useState('mean');
+
+      const [showFullscreenChart, setShowFullscreenChart] = useState(false);
+
+      const now = new Date();
+      const [transitDate, setTransitDate] = useState(now);
+      const [transitCity, setTransitCity] = useState('ရန်ကုန်');
+      const [transitLat, setTransitLat] = useState('16.8409');
+      const [transitLon, setTransitLon] = useState('96.1735');
+
+      const initH = now.getHours();
+      const initAmPm = initH >= 12 ? 'PM' : 'AM';
+      const [birthName, setBirthName] = useState('ဇာတာရှင်သစ်');
+      const [birthYear, setBirthYear] = useState(now.getFullYear().toString());
+      const [birthMonth, setBirthMonth] = useState((now.getMonth() + 1).toString());
+      const [birthDay, setBirthDay] = useState(now.getDate().toString());
+      const [birthHour, setBirthHour] = useState(((initH % 12) || 12).toString());
+      const [birthMinute, setBirthMinute] = useState(now.getMinutes().toString());
+      const [birthAmPm, setBirthAmPm] = useState(initAmPm);
+      const [birthPlace, setBirthPlace] = useState('ရန်ကုန်');
+      const [birthLat, setBirthLat] = useState('16.8409');
+      const [birthLon, setBirthLon] = useState('96.1735');
+      const [birthTz, setBirthTz] = useState('6.5');
+
+      const [prashnaCustomText, setPrashnaCustomText] = useState('စာမေးပွဲ အောင်ပါ့မလား');
+      const [horaryNumber, setHoraryNumber] = useState('108');
+      const [prashnaResult, setPrashnaResult] = useState(null);
+
+      const [boy, setBoy] = useState({ name: 'သတို့သား', d: now.getDate().toString(), m: (now.getMonth() + 1).toString(), y: now.getFullYear().toString(), h: ((initH % 12) || 12).toString(), min: now.getMinutes().toString(), ampm: initAmPm, city: 'ရန်ကုန်', lat: '16.8409', lon: '96.1735' });
+      const [girl, setGirl] = useState({ name: 'သတို့သမီး', d: now.getDate().toString(), m: (now.getMonth() + 1).toString(), y: now.getFullYear().toString(), h: ((initH % 12) || 12).toString(), min: now.getMinutes().toString(), ampm: initAmPm, city: 'ရန်ကုန်', lat: '16.8409', lon: '96.1735' });
+
+      const [citySuggestions, setCitySuggestions] = useState([]);
+      const [searchTarget, setSearchTarget] = useState(null);
+      const [savedProfiles, setSavedProfiles] = useState([]);
+      const [showSavedModal, setShowSavedModal] = useState(false);
+      const [expMaha, setExpMaha] = useState(null);
+
+      useEffect(() => {
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition((pos) => {
+            const lat = pos.coords.latitude.toFixed(4);
+            const lon = pos.coords.longitude.toFixed(4);
+            setTransitLat(lat); setTransitLon(lon);
+            setBirthLat(lat); setBirthLon(lon);
+            setBoy((prev) => ({ ...prev, lat, lon }));
+            setGirl((prev) => ({ ...prev, lat, lon }));
+          }, () => {});
+        }
+        try {
+          const stored = localStorage.getItem('saved_jyotish_pwa');
+          if (stored) setSavedProfiles(JSON.parse(stored));
+        } catch(e) {}
+      }, []);
+
+      const saveProfile = () => {
+        const p = { id: Date.now().toString(), name: birthName, year: birthYear, month: birthMonth, day: birthDay, hour: birthHour, minute: birthMinute, ampm: birthAmPm, place: birthPlace, lat: birthLat, lon: birthLon, tz: birthTz };
+        const updated = [p].concat(savedProfiles);
+        setSavedProfiles(updated);
+        try { localStorage.setItem('saved_jyotish_pwa', JSON.stringify(updated)); } catch(e){}
+        alert(`${birthName} ၏ ဇာတာကို သိမ်းဆည်းပြီးပါပြီ။`);
+      };
+
+      const loadProfile = (p) => {
+        setBirthName(p.name); setBirthYear(p.year); setBirthMonth(p.month); setBirthDay(p.day);
+        setBirthHour(p.hour); setBirthMinute(p.minute); setBirthAmPm(p.ampm);
+        setBirthPlace(p.place); setBirthLat(p.lat); setBirthLon(p.lon); setBirthTz(p.tz);
+        setShowSavedModal(false);
+      };
+
+      const deleteProfile = (id) => {
+        const updated = savedProfiles.filter((p) => p.id !== id);
+        setSavedProfiles(updated);
+        try { localStorage.setItem('saved_jyotish_pwa', JSON.stringify(updated)); } catch(e){}
+      };
+
+      const handleSearchCity = async (text, target) => {
+        if (!text) return;
+        setSearchTarget(target);
+        try {
+          const res = await fetch('https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(text) + '&limit=5', {
+            headers: { 'User-Agent': 'JyotishPWA/12.0' }
+          });
+          const data = await res.json();
+          setCitySuggestions(data);
+        } catch (e) {
+          alert('ရှာဖွေမရပါ၊ အင်တာနက်လိုင်း စစ်ဆေးပါ။');
+        }
+      };
+
+      const selectCity = (item) => {
+        const name = item.display_name.split(',').slice(0, 2).join(', ');
+        const lat = parseFloat(item.lat).toFixed(4);
+        const lon = parseFloat(item.lon).toFixed(4);
+        if (searchTarget === 'birth') {
+          setBirthPlace(name); setBirthLat(lat); setBirthLon(lon);
+        } else if (searchTarget === 'transit') {
+          setTransitCity(name); setTransitLat(lat); setTransitLon(lon);
+        } else if (searchTarget === 'boy') {
+          setBoy((prev) => ({ ...prev, city: name, lat, lon }));
+        } else if (searchTarget === 'girl') {
+          setGirl((prev) => ({ ...prev, city: name, lat, lon }));
+        }
+        setCitySuggestions([]);
+      };
+
+      const to24 = (hStr, ampm) => {
+        let h = parseInt(hStr, 10) || 12;
+        if (ampm === 'PM' && h < 12) h += 12;
+        if (ampm === 'AM' && h === 12) h = 0;
+        return h;
+      };
+
+      const curY = now.getFullYear();
+      const sY = safeYear(birthYear, curY);
+      const sM = safeMonth(birthMonth, now.getMonth() + 1);
+      const sD = safeDay(birthDay, now.getDate());
+      const sH = to24(safeHour(birthHour, 12), birthAmPm);
+      const sMin = safeMinute(birthMinute, now.getMinutes());
+
+      const birthDateObj = new Date(sY, sM - 1, sD, sH, sMin);
+
+      const birthJD = getJulianDay(sY, sM, sD, sH, sMin, birthTz);
+      const birthPlanets = calculateNASA_JPL_Planets(birthJD, parseFloat(birthLat) || 16.84, parseFloat(birthLon) || 96.17, ayanamsa, nodeType);
+      const tJD = getJulianDay(transitDate.getFullYear(), transitDate.getMonth() + 1, transitDate.getDate(), transitDate.getHours(), transitDate.getMinutes(), 6.5);
+      const transitPlanets = calculateNASA_JPL_Planets(tJD, parseFloat(transitLat) || 16.84, parseFloat(transitLon) || 96.17, ayanamsa, nodeType);
+
+      const dashaTree = calculateDashaTree(birthPlanets.Moon, birthDateObj);
+      const bhavaBala = calculateBhavaBala(birthPlanets);
+      const yogas = checkAllYogas(birthPlanets);
+
+      const currentDateStr = now.toISOString().split('T')[0];
+      const currentRunningDasha = dashaTree.find((d) => d.start <= currentDateStr && d.end >= currentDateStr) || dashaTree[0] || { lord: 'Ketu', start: '2026-01-01', end: '2033-01-01' };
+
+      const lifeOverview = generateLifeOverview(birthPlanets);
+      const lifetimeMilestones = generateLifetimeMilestones(birthDateObj, dashaTree, birthPlanets);
+      const annualForecast = generateAnnualForecast(birthDateObj, birthPlanets, transitPlanets);
+      const conjunctionsAndAspects = analyzeConjunctionsAndAspects(birthPlanets);
+      const liveTransitPredictions = analyzeLiveTransit(birthPlanets, transitPlanets);
+
+      const runPrashna = () => {
+        const res = calculatePrashnaResult(prashnaCustomText, horaryNumber, birthPlanets, transitPlanets, dashaTree);
+        setPrashnaResult(res);
+      };
+
+      const boyH = to24(safeHour(boy.h, 12), boy.ampm);
+      const girlH = to24(safeHour(girl.h, 12), girl.ampm);
+      const boyJD = getJulianDay(safeYear(boy.y, curY), safeMonth(boy.m, 1), safeDay(boy.d, 1), boyH, safeMinute(boy.min, 0), 6.5);
+      const girlJD = getJulianDay(safeYear(girl.y, curY), safeMonth(girl.m, 1), safeDay(girl.d, 1), girlH, safeMinute(girl.min, 0), 6.5);
+      const matchResult = calculateSynastry(calculateNASA_JPL_Planets(boyJD, boy.lat, boy.lon), calculateNASA_JPL_Planets(girlJD, girl.lat, girl.lon));
+
+      const timePad = (n) => (n < 10 ? '0' + n : n);
+      const transitTimeStr = `${timePad(transitDate.getHours())}:${timePad(transitDate.getMinutes())}`;
+
+      return (
+        <div className="max-w-md mx-auto min-h-screen pb-12 flex flex-col bg-slate-50">
+          {/* TOP SETTINGS BAR */}
+          <div className="bg-emerald-800 text-white px-3 py-2 text-xs shadow-md">
+            <div className="flex items-center justify-between mb-1">
+              <div className="flex items-center space-x-1">
+                <span className="text-emerald-200 font-semibold">Ayanamsa:</span>
+                {['lahiri', 'raman', 'kp', 'tropical'].map((a) => (
+                  <button key={a} onClick={() => setAyanamsa(a)} className={`px-1.5 py-0.5 rounded text-[10px] ${ayanamsa === a ? 'bg-emerald-600 font-bold' : 'bg-white/10'}`}>{a.toUpperCase()}</button>
+                ))}
+              </div>
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-1">
+                <span className="text-emerald-200 font-semibold">Chart:</span>
+                {['east', 'south', 'north'].map((s) => (
+                  <button key={s} onClick={() => setChartStyle(s)} className={`px-1.5 py-0.5 rounded text-[10px] ${chartStyle === s ? 'bg-emerald-600 font-bold' : 'bg-white/10'}`}>{s.toUpperCase()}</button>
+                ))}
+              </div>
+              <div className="flex items-center space-x-1">
+                <span className="text-emerald-200 font-semibold">Node:</span>
+                {['mean', 'true'].map((n) => (
+                  <button key={n} onClick={() => setNodeType(n)} className={`px-1.5 py-0.5 rounded text-[10px] ${nodeType === n ? 'bg-emerald-600 font-bold' : 'bg-white/10'}`}>{n.toUpperCase()}</button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* TABS HEADER */}
+          <div className="flex overflow-x-auto no-scrollbar bg-white border-b border-slate-200 text-xs font-medium">
+            {[
+              { id: 'transit', l: '🪐 ကောဇာ' },
+              { id: 'chart', l: '📜 မွေးဇာတာ' },
+              { id: 'readings', l: '🔮 အဟောစာတမ်း' },
+              { id: 'prashna', l: '🧭 ဟူးရား (Prashna)' },
+              { id: 'dasha', l: '⏳ ဒသာ' },
+              { id: 'bhava', l: '🏛️ ဘာဝ' },
+              { id: 'yogas', l: '✨ ယောဂ' },
+              { id: 'matching', l: '💍 ဇာတာတိုက်' }
+            ].map((t) => (
+              <button key={t.id} onClick={() => setActiveTab(t.id)} className={`px-3.5 py-2.5 whitespace-nowrap border-b-2 ${activeTab === t.id ? 'border-emerald-800 text-emerald-800 font-bold' : 'border-transparent text-slate-500'}`}>{t.l}</button>
+            ))}
+          </div>
+
+          {/* TAB 1: TRANSIT */}
+          {activeTab === 'transit' && (
+            <div className="p-3 space-y-3">
+              <div className="flex justify-between items-baseline">
+                <h2 className="font-bold text-emerald-900 text-sm">လက်ရှိ ကောဇာဂြိုဟ်ခွင် (Live Transit)</h2>
+                <span className="text-[11px] text-slate-500">{transitCity} • {transitTimeStr}</span>
+              </div>
+              <div className="flex space-x-1">
+                <input value={transitCity} onChange={(e) => setTransitCity(e.target.value)} placeholder="မြို့၊ နိုင်ငံ..." className="flex-1 bg-white border border-slate-300 rounded p-1.5 text-xs" />
+                <button onClick={() => handleSearchCity(transitCity, 'transit')} className="bg-emerald-800 text-white px-3 py-1 rounded text-xs font-semibold">ရှာမည်</button>
+              </div>
+              {citySuggestions.length > 0 && searchTarget === 'transit' && (
+                <div className="bg-white border border-slate-300 rounded shadow-md text-xs">
+                  {citySuggestions.map((it, idx) => (
+                    <div key={idx} onClick={() => selectCity(it)} className="p-2 border-b last:border-0 hover:bg-slate-100 cursor-pointer">{it.display_name}</div>
+                  ))}
+                </div>
+              )}
+              <div className="py-1">
+                {chartStyle === 'south' ? <SouthChart planets={transitPlanets} vargaNum={1} /> :
+                 chartStyle === 'north' ? <NorthChart planets={transitPlanets} vargaNum={1} /> :
+                 <EastChart planets={transitPlanets} vargaNum={1} />}
+              </div>
+
+              <button
+                onClick={() => setShowFullscreenChart(true)}
+                className="w-full py-2 bg-slate-800 text-white rounded text-xs font-bold shadow hover:bg-slate-900 flex items-center justify-center space-x-1"
+              >
+                <span>🔍 မျက်နှာပြင်အပြည့် ကြည့်မည် (Fullscreen View)</span>
+              </button>
+
+              <div className="bg-white rounded border border-slate-200 overflow-hidden text-xs">
+                <div className="grid grid-cols-5 bg-slate-100 p-2 font-bold text-slate-700"><span>ဂြိုဟ်</span><span>ဒီဂရီ</span><span>ရာသီ</span><span>အဆင့်</span><span>နက္ခတ်</span></div>
+                {Object.keys(transitPlanets).filter((k) => k !== 'ayanamsaVal').map((k) => {
+                  const sIdx = calculateVarga(transitPlanets[k], 1);
+                  const dignity = getPlanetaryDignity(k, sIdx);
+                  return (
+                    <div key={k} className="grid grid-cols-5 p-2 border-t border-slate-100 items-center">
+                      <span className="font-bold">{PLANET_SHORT[k]} ({k})</span>
+                      <span>{(transitPlanets[k] % 30).toFixed(2)}°</span>
+                      <span>{RASI_NAMES_EN[sIdx]}</span>
+                      <span className={'text-[11px] ' + dignity.color}>{dignity.label}</span>
+                      <span className="text-slate-500 text-[11px]">{NAKSHATRAS[Math.floor(transitPlanets[k] / (360 / 27))] || 'Ashwini'}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* TAB 2: BIRTH CHART */}
+          {activeTab === 'chart' && (
+            <div className="p-3 space-y-3">
+              <div className="flex justify-between items-center">
+                <h2 className="font-bold text-emerald-900 text-sm">မွေးဇာတာ & စက်ပြိုင်</h2>
+                <div className="space-x-1">
+                  <button onClick={saveProfile} className="bg-emerald-800 text-white px-2 py-1 rounded text-[11px] font-semibold">💾 သိမ်း</button>
+                  <button onClick={() => setShowSavedModal(true)} className="bg-slate-700 text-white px-2 py-1 rounded text-[11px]">📂 ဖွင့် ({savedProfiles.length})</button>
+                  <button onClick={() => window.print()} className="bg-amber-700 text-white px-2 py-1 rounded text-[11px]">📄 PDF</button>
+                </div>
+              </div>
+
+              <input value={birthName} onChange={(e) => setBirthName(e.target.value)} placeholder="အမည်" className="w-full bg-white border border-slate-300 rounded p-1.5 text-xs" />
+              <div className="grid grid-cols-6 gap-1 text-xs">
+                <input value={birthDay} onChange={(e) => setBirthDay(e.target.value)} placeholder="ရက်" className="bg-white border border-slate-300 rounded p-1 text-center" />
+                <input value={birthMonth} onChange={(e) => setBirthMonth(e.target.value)} placeholder="လ" className="bg-white border border-slate-300 rounded p-1 text-center" />
+                <input value={birthYear} onChange={(e) => setBirthYear(e.target.value)} placeholder="ခုနှစ်" className="bg-white border border-slate-300 rounded p-1 text-center" />
+                <input value={birthHour} onChange={(e) => setBirthHour(e.target.value)} placeholder="နာရီ" className="bg-white border border-slate-300 rounded p-1 text-center" />
+                <input value={birthMinute} onChange={(e) => setBirthMinute(e.target.value)} placeholder="မိနစ်" className="bg-white border border-slate-300 rounded p-1 text-center" />
+                <button onClick={() => setBirthAmPm(birthAmPm === 'AM' ? 'PM' : 'AM')} className="bg-emerald-800 text-white rounded font-bold">{birthAmPm}</button>
+              </div>
+
+              <div className="flex space-x-1">
+                <input value={birthPlace} onChange={(e) => setBirthPlace(e.target.value)} placeholder="မွေးဖွားရာ မြို့၊ နိုင်ငံ..." className="flex-1 bg-white border border-slate-300 rounded p-1.5 text-xs" />
+                <button onClick={() => handleSearchCity(birthPlace, 'birth')} className="bg-emerald-800 text-white px-3 py-1 rounded text-xs font-semibold">ရှာမည်</button>
+              </div>
+              {citySuggestions.length > 0 && searchTarget === 'birth' && (
+                <div className="bg-white border border-slate-300 rounded shadow-md text-xs">
+                  {citySuggestions.map((it, idx) => (
+                    <div key={idx} onClick={() => selectCity(it)} className="p-2 border-b last:border-0 hover:bg-slate-100 cursor-pointer">{it.display_name}</div>
+                  ))}
+                </div>
+              )}
+
+              <div className="flex space-x-1 overflow-x-auto no-scrollbar py-1 text-xs">
+                {ALL_VARGAS.map((v) => (
+                  <button key={v} onClick={() => setVarga(v)} className={`px-2 py-1 rounded whitespace-nowrap ${varga === v ? 'bg-emerald-800 text-white font-bold' : 'bg-slate-200'}`}>D-{v}</button>
+                ))}
+              </div>
+
+              <button onClick={() => setIsOverlayOn(!isOverlayOn)} className={`w-full py-1.5 rounded text-xs font-bold border ${isOverlayOn ? 'bg-amber-600 text-white border-amber-600' : 'bg-white text-slate-700 border-slate-300'}`}>
+                {isOverlayOn ? '✓ ကောဇာ စက်ပြိုင် (Overlay: ON)' : '⊞ ကောဇာ စက်ပြိုင် ဖွင့်မည် (Overlay: OFF)'}
+              </button>
+
+              <div className="py-1">
+                {chartStyle === 'south' ? (
+                  <SouthChart planets={birthPlanets} transitPlanets={transitPlanets} isOverlay={isOverlayOn} vargaNum={varga} />
+                ) : chartStyle === 'north' ? (
+                  <NorthChart planets={birthPlanets} transitPlanets={transitPlanets} isOverlay={isOverlayOn} vargaNum={varga} />
+                ) : (
+                  <EastChart planets={birthPlanets} transitPlanets={transitPlanets} isOverlay={isOverlayOn} vargaNum={varga} birthInfo={{ name: birthName, date: `${sD}.${sM}.${sY}`, time: `${birthHour}:${birthMinute} ${birthAmPm}`, city: birthPlace }} transitInfo={{ date: `${now.getDate()}.${now.getMonth()+1}.${now.getFullYear()}`, time: `${now.getHours()}:${now.getMinutes()}`, city: transitCity }} />
+                )}
+              </div>
+
+              <button
+                onClick={() => setShowFullscreenChart(true)}
+                className="w-full py-2 bg-slate-800 text-white rounded text-xs font-bold shadow hover:bg-slate-900 flex items-center justify-center space-x-1"
+              >
+                <span>🔍 မျက်နှာပြင်အပြည့် ကြည့်မည် (Fullscreen View)</span>
+              </button>
+
+              <div className="bg-white rounded border border-slate-200 overflow-hidden text-xs">
+                <div className="grid grid-cols-5 bg-slate-100 p-2 font-bold text-slate-700"><span>ဂြိုဟ်</span><span>ဒီဂရီ</span><span>ရာသီ</span><span>ဘာဝ</span><span>အဆင့်အတန်း</span></div>
+                {Object.keys(birthPlanets).filter((k) => k !== 'ayanamsaVal').map((k) => {
+                  const deg = birthPlanets[k];
+                  const s = calculateVarga(deg, varga);
+                  const lSign = calculateVarga(birthPlanets.Lagna, varga);
+                  const bhava = ((s - lSign + 12) % 12) + 1;
+                  const dignity = getPlanetaryDignity(k, s);
+                  return (
+                    <div key={k} className="grid grid-cols-5 p-2 border-t border-slate-100 items-center">
+                      <span className="font-bold">{PLANET_SHORT[k]} ({k})</span>
+                      <span>{(deg % 30).toFixed(2)}°</span>
+                      <span>{RASI_NAMES_EN[s]}</span>
+                      <span className={bhava === 1 ? 'text-red-600 font-bold' : 'text-slate-600'}>House {bhava}</span>
+                      <span className={'text-[11px] ' + dignity.color}>{dignity.label}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* TAB 3: READINGS */}
+          {activeTab === 'readings' && (
+            <div className="p-3 space-y-3 text-xs">
+              <h2 className="font-bold text-emerald-900 text-sm">ဇာတာ အဟောစာတမ်း (Comprehensive Reading)</h2>
+
+              {/* 1. Life Overview */}
+              <div className="bg-gradient-to-r from-emerald-800 to-teal-900 text-white p-3.5 rounded-lg shadow space-y-2">
+                <div className="flex justify-between items-center border-b border-emerald-700/60 pb-1.5">
+                  <span className="font-bold text-[13px] text-emerald-200">💎 ဘဝခြုံငုံသုံးသပ်ချက်နှင့် ဓနအဆင့်အတန်း</span>
+                  <span className="text-[10px] bg-emerald-700 px-2 py-0.5 rounded font-semibold">Executive Overview</span>
+                </div>
+                <div>
+                  <div className="text-[11px] text-amber-300 font-bold">ခန့်မှန်းခြေ ဓနဥစ္စာ အဆင့်အတန်း (Estimated Net Worth):</div>
+                  <div className="text-sm font-bold mt-0.5">{lifeOverview.netWorthTier}</div>
+                  <p className="text-emerald-100 text-[11px] mt-1 leading-relaxed">{lifeOverview.netWorthDesc}</p>
+                </div>
+                <div className="border-t border-emerald-700/60 pt-1.5 text-emerald-100 text-[11px] leading-relaxed">
+                  <strong>ဘဝခရီးလမ်း:</strong> {lifeOverview.pillars ? lifeOverview.pillars.lifePath : ''}
+                </div>
+              </div>
+
+              {/* 2. Lifetime Milestones */}
+              <div className="bg-white border border-slate-200 p-3 rounded-lg shadow-sm space-y-2">
+                <div className="flex justify-between items-center border-b pb-1">
+                  <h3 className="font-bold text-slate-800 text-xs">🚩 ဘဝမှတ်တိုင်များ အချိန်ဇယား (Lifetime Milestones)</h3>
+                  <span className="text-[10px] text-emerald-800 bg-emerald-50 font-bold px-1.5 py-0.5 rounded">Dasha Timeline</span>
+                </div>
+                <div className="space-y-2">
+                  {lifetimeMilestones.map((m, idx) => (
+                    <div key={idx} className="border-l-2 border-emerald-600 pl-2.5 py-0.5 space-y-0.5">
+                      <div className="flex justify-between items-center">
+                        <span className="font-bold text-slate-800">{m.phase}</span>
+                        <span className="text-[10px] text-emerald-700 bg-emerald-100 font-bold px-1.5 py-0.5 rounded">{m.age} ({m.yearRange})</span>
+                      </div>
+                      <p className="text-slate-600 text-[11px] leading-relaxed">{m.desc}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* 3. 1-Year Monthly Forecast */}
+              <div className="bg-white border border-emerald-300 p-3 rounded-lg shadow-sm space-y-2">
+                <div className="flex justify-between items-center border-b border-emerald-200 pb-1.5">
+                  <div>
+                    <h3 className="font-bold text-emerald-900 text-xs">📅 ၁ နှစ်စာ လစဉ်ခွဲခြမ်းစိတ်ဖြာ အဟော (Annual Forecast)</h3>
+                    <div className="text-[10px] text-slate-500 mt-0.5">{annualForecast.annualCycle}</div>
+                  </div>
+                  <span className="text-[10px] bg-emerald-800 text-white font-bold px-2 py-0.5 rounded">Solar Return</span>
+                </div>
+                <div className="space-y-1.5 max-h-72 overflow-y-auto no-scrollbar pr-1">
+                  {annualForecast.months.map((item) => (
+                    <div key={item.num} className="bg-slate-50 p-2 rounded border border-slate-200 space-y-0.5">
+                      <div className="flex justify-between items-center">
+                        <span className="font-bold text-slate-800 text-xs">{item.monthName}</span>
+                        <span className={'text-[10px] px-1.5 py-0.5 rounded ' + item.badgeColor}>{item.badge}</span>
+                      </div>
+                      <div className="text-[10px] text-slate-400">{item.dateRange}</div>
+                      <p className="text-slate-700 text-[11px] leading-relaxed mt-0.5">{item.theme}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* 4. Pillars */}
+              <div className="bg-white border border-slate-200 p-3 rounded-lg shadow-sm space-y-2">
+                <h3 className="font-bold text-slate-800 text-xs border-b pb-1">ကဏ္ဍအလိုက် အနှစ်ချုပ် အဟောများ</h3>
+                <div className="space-y-1.5">
+                  <div>
+                    <span className="font-bold text-emerald-800">💼 အလုပ်အကိုင်နှင့် စီးပွားရေး (Career):</span>
+                    <p className="text-slate-600 mt-0.5 leading-relaxed">{lifeOverview.pillars ? lifeOverview.pillars.career : ''}</p>
+                  </div>
+                  <div>
+                    <span className="font-bold text-emerald-800">💰 ဝင်ငွေနှင့် ဓနဥစ္စာ (Wealth):</span>
+                    <p className="text-slate-600 mt-0.5 leading-relaxed">{lifeOverview.pillars ? lifeOverview.pillars.wealth : ''}</p>
+                  </div>
+                  <div>
+                    <span className="font-bold text-emerald-800">📚 ပညာရေးနှင့် ဉာဏ်ပညာ (Education):</span>
+                    <p className="text-slate-600 mt-0.5 leading-relaxed">{lifeOverview.pillars ? lifeOverview.pillars.education : ''}</p>
+                  </div>
+                  <div>
+                    <span className="font-bold text-emerald-800">❤️ အချစ်ရေးနှင့် သံယောဇဉ် (Love):</span>
+                    <p className="text-slate-600 mt-0.5 leading-relaxed">{lifeOverview.pillars ? lifeOverview.pillars.love : ''}</p>
+                  </div>
+                  <div>
+                    <span className="font-bold text-emerald-800">💍 အိမ်ထောင်ရေးနှင့် ဘဝလက်တွဲဖော် (Marriage):</span>
+                    <p className="text-slate-600 mt-0.5 leading-relaxed">{lifeOverview.pillars ? lifeOverview.pillars.marriage : ''}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* 5. Conjunctions */}
+              <div className="bg-white border border-slate-200 p-3 rounded-lg shadow-sm space-y-2">
+                <h3 className="font-bold text-slate-800 text-xs border-b pb-1">ဂြိုဟ်ပူးနှင့် အထူးအမြင် အဟောများ</h3>
+                {conjunctionsAndAspects.length === 0 ? (
+                  <p className="text-slate-500">ထင်ရှားသော အထူးဂြိုဟ်ပူးအမြင်များ မရှိပါ။</p>
+                ) : (
+                  conjunctionsAndAspects.map((item, idx) => (
+                    <div key={idx} className="bg-slate-50 border border-slate-200 p-2 rounded">
+                      <div className="flex justify-between items-center">
+                        <span className="font-bold text-emerald-900">{item.title}</span>
+                        <span className="text-[10px] text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded font-semibold">{item.type}</span>
+                      </div>
+                      <p className="text-slate-600 mt-1 leading-relaxed">{item.desc}</p>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* 6. Live Transit Alert */}
+              <div className="bg-amber-50 border-2 border-amber-600 p-3 rounded-lg shadow-sm space-y-1.5">
+                <div className="flex justify-between items-center border-b border-amber-300 pb-1">
+                  <span className="font-bold text-amber-900 text-xs">⚡ လက်ရှိ ကောဇာစီးမှု အဟော (Current Transit)</span>
+                  <span className="bg-amber-600 text-white px-2 py-0.5 rounded text-[10px] font-bold">2026 Phase</span>
+                </div>
+                <div className="text-slate-700"><strong>🪐 စနေကောဇာ (Saturn):</strong> {liveTransitPredictions.sadeSati}</div>
+                <div className="text-slate-700"><strong>✨ ဂျူပီတာကောဇာ (Jupiter):</strong> {liveTransitPredictions.jupTransit}</div>
+                <div className="text-slate-700"><strong>🌀 ရာဟုကောဇာ (Rahu):</strong> {liveTransitPredictions.rahuTransit}</div>
+              </div>
+
+              {/* 7. Running Dasha */}
+              <div className="bg-emerald-50 border-2 border-emerald-700 p-3 rounded-lg shadow-sm space-y-1">
+                <div className="flex justify-between items-center border-b border-emerald-200 pb-1">
+                  <span className="font-bold text-emerald-900 text-[13px]">လက်ရှိ ဖြတ်သန်းနေသော မဟာဒသာ</span>
+                  <span className="bg-emerald-700 text-white px-2 py-0.5 rounded text-[10px] font-bold">{currentRunningDasha.lord} မဟာဒသာ</span>
+                </div>
+                <div className="text-[11px] text-emerald-800 font-medium">ကာလအပိုင်းအခြား: {currentRunningDasha.start} မှ {currentRunningDasha.end} ထိ</div>
+                <p className="text-slate-700 leading-relaxed mt-1">{DASHA_PREDICTIONS[currentRunningDasha.lord] || 'ဒသာအကျိုးပေး ကောင်းမွန်စွာ ဖြတ်သန်းရမည်။'}</p>
+              </div>
+
+              {/* 8. House Placements */}
+              <div className="space-y-2">
+                <h3 className="font-bold text-slate-800 text-xs border-b pb-1">ဂြိုဟ်နှင့် ဘာဝအိမ် ရပ်တည်မှု အသေးစိတ် အဟောများ</h3>
+                {['Sun', 'Moon', 'Mars', 'Mercury', 'Jupiter', 'Venus', 'Saturn'].map((pKey) => {
+                  const deg = birthPlanets[pKey];
+                  const s = calculateVarga(deg, 1);
+                  const lSign = calculateVarga(birthPlanets.Lagna, 1);
+                  const bhava = ((s - lSign + 12) % 12) + 1;
+                  const dignity = getPlanetaryDignity(pKey, s);
+                  const reading = (PLANET_HOUSE_READINGS[pKey] && PLANET_HOUSE_READINGS[pKey][bhava]) ? PLANET_HOUSE_READINGS[pKey][bhava] : 'အကျိုးပေး သင့်တင့်စွာ ရှိမည်။';
+
+                  return (
+                    <div key={pKey} className="bg-white border border-slate-200 p-2.5 rounded shadow-sm space-y-1">
+                      <div className="flex justify-between items-center">
+                        <span className="font-bold text-emerald-900">{pKey} ဂြိုဟ် (House {bhava} - {RASI_NAMES_EN[s]})</span>
+                        <span className={'text-[11px] px-1.5 py-0.5 rounded bg-slate-100 ' + dignity.color}>{dignity.label}</span>
+                      </div>
+                      <p className="text-slate-600 leading-relaxed">{reading}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* TAB 4: PRASHNA HORARY (ဟူးရား - စာရိုက်မေးမြန်းမှုစနစ်) */}
+          {activeTab === 'prashna' && (
+            <div className="p-3 space-y-3 text-xs">
+              <div className="flex justify-between items-baseline">
+                <h2 className="font-bold text-emerald-900 text-sm">🧭 ဟူးရား ကောဇာ အဟောစနစ် (Unified Prashna)</h2>
+                <span className="text-[10px] text-slate-500">Horary & Natal Synthesis</span>
+              </div>
+
+              <div className="bg-amber-50 border border-amber-300 p-2.5 rounded text-[11px] text-amber-900 leading-relaxed">
+                <strong>⚠️ မေးမြန်းသူ သိရှိရန်:</strong> ဟူးရားနက္ခတ်စနစ်သည် <em>"ဖြစ်နိုင်သလား / မဖြစ်နိုင်သလား (Yes / No)"</em> တိကျသော မေးခွန်းများအတွက် အထူးမှန်ကန်ပါသည်။ မေးလိုသော မေးခွန်းကို အောက်တွင် တိုက်ရိုက် စာရိုက်ထည့်မေးမြန်းနိုင်ပါသည်။
+              </div>
+
+              <div className="bg-white border border-slate-200 p-3 rounded-lg shadow-sm space-y-2.5">
+                <div>
+                  <label className="font-bold text-slate-800 block mb-1">မေးမြန်းလိုသော ကိစ္စရပ် (စာရိုက်ထည့်ပါ):</label>
+                  <input
+                    type="text"
+                    value={prashnaCustomText}
+                    onChange={(e) => setPrashnaCustomText(e.target.value)}
+                    placeholder="ဥပမာ - စာမေးပွဲ အောင်ပါ့မလား / နိုင်ငံခြား သွားရမလား / အလုပ်ရမလား..."
+                    className="w-full bg-slate-50 border border-slate-300 rounded p-2 text-xs font-medium focus:outline-none focus:border-emerald-600"
+                  />
+                </div>
+
+                <div className="flex space-x-2 items-center">
+                  <div className="flex-1">
+                    <label className="text-[11px] text-slate-600 block mb-0.5">ဟူးရား ဂဏန်း (KP Seed 1-249):</label>
+                    <input
+                      type="number"
+                      value={horaryNumber}
+                      onChange={(e) => setHoraryNumber(e.target.value)}
+                      placeholder="1 မှ 249 ကြား"
+                      className="w-full bg-slate-50 border border-slate-300 rounded p-1.5 text-center font-bold"
+                    />
+                  </div>
+                  <button
+                    onClick={() => setHoraryNumber(Math.floor(Math.random() * 249 + 1).toString())}
+                    className="bg-slate-200 text-slate-700 px-3 py-2 rounded font-semibold text-xs mt-3.5 hover:bg-slate-300"
+                  >
+                    🎲 ကံစမ်းဂဏန်း
+                  </button>
+                </div>
+
+                <button
+                  onClick={runPrashna}
+                  className="w-full py-2.5 bg-emerald-800 text-white rounded font-bold shadow hover:bg-emerald-900 transition mt-1"
+                >
+                  ဟူးရား အဟောထုတ်ယူမည်
+                </button>
+              </div>
+
+              {prashnaResult && (
+                <div className="bg-emerald-50 border-2 border-emerald-700 p-3.5 rounded-lg shadow space-y-2 animate-fade-in">
+                  <div className="flex justify-between items-center border-b border-emerald-200 pb-1.5">
+                    <span className="font-bold text-emerald-950 text-xs">မေးခွန်း: "{prashnaResult.queryText}"</span>
+                    <span className="text-[10px] bg-emerald-700 text-white px-2 py-0.5 rounded font-bold">{prashnaResult.score}% ဖြစ်နိုင်ခြေ</span>
+                  </div>
+
+                  <div className="bg-white p-2.5 rounded border border-emerald-200 space-y-1">
+                    <div className="font-bold text-emerald-900 text-[13px]">{prashnaResult.verdict}</div>
+                    <p className="text-slate-700 leading-relaxed text-[11px]">{prashnaResult.answerDesc}</p>
+                    <div className="pt-1 text-[11px] text-amber-800 font-semibold border-t border-slate-100">
+                      ⏱️ <strong>ခန့်မှန်းအချိန်ကာလ:</strong> {prashnaResult.timingWindow}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-1 pt-1 text-center text-[10px] text-emerald-800 font-medium">
+                    <div className="bg-emerald-100/70 p-1 rounded">အဓိကဂြိုဟ်: {prashnaResult.karaka}</div>
+                    <div className="bg-emerald-100/70 p-1 rounded">တွက်ချက်မှု: {prashnaResult.vargaUsed}</div>
+                    <div className="bg-emerald-100/70 p-1 rounded">အခြေအနေ: မွေး+ကောဇာ စက်ပြိုင်</div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* TAB 5: DASHA */}
+          {activeTab === 'dasha' && (
+            <div className="p-3 space-y-2 text-xs">
+              <h2 className="font-bold text-emerald-900 text-sm mb-1">ဝိမ္သောတ္တရီ ဒသာစက်ဝန်း</h2>
+              {dashaTree.map((m, mIdx) => (
+                <div key={mIdx} className="bg-white border border-slate-200 rounded overflow-hidden">
+                  <div onClick={() => setExpMaha(expMaha === mIdx ? null : mIdx)} className="flex justify-between p-2.5 bg-slate-50 cursor-pointer">
+                    <span className="font-bold text-emerald-900">{m.lord} မဟာဒသာ ({m.years} နှစ်)</span>
+                    <span className="text-slate-500">{m.start} မှ {m.end} {expMaha === mIdx ? '▲' : '▼'}</span>
+                  </div>
+                  {expMaha === mIdx && (
+                    <div className="p-2 bg-emerald-50/40 space-y-1">
+                      {m.antars.map((a, aIdx) => (
+                        <div key={aIdx} className="flex justify-between py-1 border-b border-emerald-100">
+                          <span className="font-medium text-emerald-800">↳ {m.lord} - {a.lord}</span>
+                          <span className="text-emerald-700">{a.start} မှ {a.end}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* TAB 6: BHAVA BALA */}
+          {activeTab === 'bhava' && (
+            <div className="p-3 space-y-2 text-xs">
+              <h2 className="font-bold text-emerald-900 text-sm">ဘာဝ ၁၂ ပါး အားဗလ (Bhava Bala)</h2>
+              {bhavaBala.sorted.map((b) => (
+                <div key={b.house} className="bg-white border border-slate-200 p-2.5 rounded shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <span className="font-bold text-emerald-800 text-sm">#{b.rank}</span>
+                      <div>
+                        <div className="font-bold">House {b.house} ({b.rasi})</div>
+                        <div className="text-[11px] text-slate-500">{b.desc}</div>
+                      </div>
+                    </div>
+                    <div className="text-right font-bold text-emerald-700">{b.pct}%</div>
+                  </div>
+                  <div className="w-full bg-slate-100 h-1.5 rounded-full mt-2 overflow-hidden">
+                    <div className="bg-emerald-600 h-full rounded-full" style={{ width: `${b.pct}%` }}></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* TAB 7: YOGAS */}
+          {activeTab === 'yogas' && (
+            <div className="p-3 space-y-2 text-xs">
+              <h2 className="font-bold text-emerald-900 text-sm mb-1">ပါဝင်သော ယောဂများ ({yogas.length})</h2>
+              {yogas.map((y, idx) => (
+                <div key={idx} className="bg-white border border-emerald-200 p-2.5 rounded">
+                  <div className="font-bold text-emerald-800 text-[13px]">{y.name}</div>
+                  <div className="text-slate-600 mt-0.5"><strong>နက္ခတ်အကြောင်းရင်း:</strong> {y.cause}</div>
+                  <div className="text-emerald-700 mt-0.5"><strong>ပေးအပ်မည့် အကျိုး:</strong> {y.result}</div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* TAB 8: MATCHING */}
+          {activeTab === 'matching' && (
+            <div className="p-3 space-y-3 text-xs">
+              <h2 className="font-bold text-emerald-900 text-sm">ဇာတာတိုက်စစ် & ဖြစ်နိုင်ခြေဆန်းစစ်ချက်</h2>
+
+              {/* Boy Input */}
+              <div className="bg-white border border-slate-200 p-2.5 rounded space-y-1.5">
+                <span className="font-bold text-emerald-800">သတို့သား အချက်အလက် (Boy)</span>
+                <input value={boy.name} onChange={(e) => setBoy({ ...boy, name: e.target.value })} placeholder="အမည်" className="w-full border p-1 rounded text-xs" />
+                <div className="grid grid-cols-6 gap-1">
+                  <input value={boy.d} onChange={(e) => setBoy({ ...boy, d: e.target.value })} placeholder="ရက်" className="border p-1 rounded text-center" />
+                  <input value={boy.m} onChange={(e) => setBoy({ ...boy, m: e.target.value })} placeholder="လ" className="border p-1 rounded text-center" />
+                  <input value={boy.y} onChange={(e) => setBoy({ ...boy, y: e.target.value })} placeholder="ခုနှစ်" className="border p-1 rounded text-center" />
+                  <input value={boy.h} onChange={(e) => setBoy({ ...boy, h: e.target.value })} placeholder="နာရီ" className="border p-1 rounded text-center" />
+                  <input value={boy.min} onChange={(e) => setBoy({ ...boy, min: e.target.value })} placeholder="မိနစ်" className="border p-1 rounded text-center" />
+                  <button onClick={() => setBoy({ ...boy, ampm: boy.ampm === 'AM' ? 'PM' : 'AM' })} className="bg-emerald-800 text-white rounded font-bold">{boy.ampm}</button>
+                </div>
+                <div className="flex space-x-1 pt-1">
+                  <input value={boy.city} onChange={(e) => setBoy({ ...boy, city: e.target.value })} placeholder="မွေးဖွားရာ မြို့၊ နိုင်ငံ..." className="flex-1 border p-1 rounded text-xs" />
+                  <button onClick={() => handleSearchCity(boy.city, 'boy')} className="bg-emerald-800 text-white px-2.5 py-1 rounded text-xs font-semibold">ရှာမည်</button>
+                </div>
+                {citySuggestions.length > 0 && searchTarget === 'boy' && (
+                  <div className="bg-white border border-slate-300 rounded shadow-md text-xs">
+                    {citySuggestions.map((it, idx) => (
+                      <div key={idx} onClick={() => selectCity(it)} className="p-1.5 border-b last:border-0 hover:bg-slate-100 cursor-pointer">{it.display_name}</div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Girl Input */}
+              <div className="bg-white border border-slate-200 p-2.5 rounded space-y-1.5">
+                <span className="font-bold text-emerald-800">သတို့သမီး အချက်အလက် (Girl)</span>
+                <input value={girl.name} onChange={(e) => setGirl({ ...girl, name: e.target.value })} placeholder="အမည်" className="w-full border p-1 rounded text-xs" />
+                <div className="grid grid-cols-6 gap-1">
+                  <input value={girl.d} onChange={(e) => setGirl({ ...girl, d: e.target.value })} placeholder="ရက်" className="border p-1 rounded text-center" />
+                  <input value={girl.m} onChange={(e) => setGirl({ ...girl, m: e.target.value })} placeholder="လ" className="border p-1 rounded text-center" />
+                  <input value={girl.y} onChange={(e) => setGirl({ ...girl, y: e.target.value })} placeholder="ခုနှစ်" className="border p-1 rounded text-center" />
+                  <input value={girl.h} onChange={(e) => setGirl({ ...girl, h: e.target.value })} placeholder="နာရီ" className="border p-1 rounded text-center" />
+                  <input value={girl.min} onChange={(e) => setGirl({ ...girl, min: e.target.value })} placeholder="မိနစ်" className="border p-1 rounded text-center" />
+                  <button onClick={() => setGirl({ ...girl, ampm: girl.ampm === 'AM' ? 'PM' : 'AM' })} className="bg-emerald-800 text-white rounded font-bold">{girl.ampm}</button>
+                </div>
+                <div className="flex space-x-1 pt-1">
+                  <input value={girl.city} onChange={(e) => setGirl({ ...girl, city: e.target.value })} placeholder="မွေးဖွားရာ မြို့၊ နိုင်ငံ..." className="flex-1 border p-1 rounded text-xs" />
+                  <button onClick={() => handleSearchCity(girl.city, 'girl')} className="bg-emerald-800 text-white px-2.5 py-1 rounded text-xs font-semibold">ရှာမည်</button>
+                </div>
+                {citySuggestions.length > 0 && searchTarget === 'girl' && (
+                  <div className="bg-white border border-slate-300 rounded shadow-md text-xs">
+                    {citySuggestions.map((it, idx) => (
+                      <div key={idx} onClick={() => selectCity(it)} className="p-1.5 border-b last:border-0 hover:bg-slate-100 cursor-pointer">{it.display_name}</div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Total Score */}
+              <div className="bg-amber-100/70 border border-amber-300 p-3 rounded text-center">
+                <div className="text-xl font-bold text-amber-900">{matchResult.total} / ၃၆ မှတ်</div>
+                <div className="font-semibold text-amber-800 text-xs mt-0.5">{matchResult.verdict}</div>
+              </div>
+
+              {/* Deep Synastry Metrics */}
+              <div className="bg-white border border-amber-200 p-3 rounded space-y-1.5">
+                <h3 className="font-bold text-emerald-900 text-xs border-b pb-1">နှစ်ဦးကြား သံယောဇဉ်နှင့် ဖြစ်နိုင်ခြေ ရာခိုင်နှုန်းဆန်းစစ်ချက်</h3>
+                <div className="flex justify-between py-0.5 border-b border-slate-100">
+                  <span className="text-slate-700">✨ အပြန်အလှန် ဆွဲဆောင်မှုရှိနိုင်ခြေ:</span>
+                  <span className="font-bold text-emerald-800">{matchResult.attractionPct}%</span>
+                </div>
+                <div className="flex justify-between py-0.5 border-b border-slate-100">
+                  <span className="text-slate-700">❤️ တစ်ဦးပေါ်တစ်ဦး အချစ်စိတ် ဖြစ်ပေါ်နိုင်ခြေ:</span>
+                  <span className="font-bold text-emerald-800">{matchResult.lovePct}%</span>
+                </div>
+                <div className="flex justify-between py-0.5 border-b border-slate-100">
+                  <span className="text-slate-700">👩‍❤️‍👨 ဒသာအရ သမီးရည်းစား ဖြစ်နိုင်ခြေ:</span>
+                  <span className="font-bold text-emerald-800">{matchResult.dashaRelPct}% ({matchResult.datingTiming})</span>
+                </div>
+                <div className="flex justify-between py-0.5 border-b border-slate-100">
+                  <span className="text-slate-700">🔥 သံဝါသ လိင်ဆက်ဆံနိုင်ခြေ:</span>
+                  <span className="font-bold text-emerald-800">{matchResult.sexualPct}% ({matchResult.intimacyTiming})</span>
+                </div>
+                <div className="py-0.5 text-slate-700">
+                  💍 <strong>မင်္ဂလာဆောင်ရန် အကောင်းဆုံး:</strong> <span className="text-amber-800 font-semibold">{matchResult.marriageTiming}</span>
+                </div>
+                <div className="py-0.5 text-slate-700">
+                  ✨ <strong>ရေစက်အထောက်အပံ့:</strong> <span className="text-emerald-800 font-semibold">{matchResult.karmicBond}</span>
+                </div>
+              </div>
+
+              {/* 36 Points Table Breakdown */}
+              <div className="bg-white rounded border border-slate-200 overflow-hidden text-xs">
+                <div className="bg-slate-100 p-2 font-bold text-slate-700 border-b border-slate-200">အဋ္ဌကုတ (၃၆) မှတ် အသေးစိတ် ခွဲခြမ်းစိတ်ဖြာချက်</div>
+                {matchResult.breakdown.map((b, idx) => (
+                  <div key={idx} className="flex justify-between items-center p-2 border-b last:border-0 border-slate-100">
+                    <div className="flex-1 pr-2">
+                      <div className="font-bold text-slate-800">{b.k}</div>
+                      <div className="text-[10px] text-slate-500">{b.desc}</div>
+                    </div>
+                    <div className="font-bold text-amber-800 whitespace-nowrap">{b.score} / {b.max}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* FULLSCREEN MODAL */}
+          <FullscreenChartModal
+            isOpen={showFullscreenChart}
+            onClose={() => setShowFullscreenChart(false)}
+            chartType={chartStyle}
+            planets={activeTab === 'transit' ? transitPlanets : birthPlanets}
+            transitPlanets={transitPlanets}
+            isOverlay={activeTab === 'chart' && isOverlayOn}
+            vargaNum={varga}
+            birthInfo={{ name: birthName, date: `${sD}.${sM}.${sY}`, time: `${birthHour}:${birthMinute} ${birthAmPm}`, city: birthPlace }}
+            transitInfo={{ date: `${now.getDate()}.${now.getMonth()+1}.${now.getFullYear()}`, time: `${now.getHours()}:${now.getMinutes()}`, city: transitCity }}
+          />
+
+          {/* SAVED PROFILES MODAL */}
+          {showSavedModal && (
+            <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+              <div className="bg-white rounded-lg p-4 w-full max-w-xs text-xs space-y-2">
+                <h3 className="font-bold text-sm text-slate-800">သိမ်းဆည်းထားသော ဇာတာရှင်များ</h3>
+                <div className="max-h-60 overflow-y-auto space-y-1">
+                  {savedProfiles.length === 0 ? <p className="text-slate-500">မှတ်တမ်းမရှိသေးပါ။</p> : savedProfiles.map((p) => (
+                    <div key={p.id} className="flex justify-between items-center border-b py-1.5">
+                      <div onClick={() => loadProfile(p)} className="cursor-pointer">
+                        <div className="font-bold text-emerald-900">{p.name}</div>
+                        <div className="text-[10px] text-slate-500">{p.day}/{p.month}/{p.year} {p.hour}:{p.minute} {p.ampm}</div>
+                      </div>
+                      <button onClick={() => deleteProfile(p.id)} className="bg-red-600 text-white px-2 py-1 rounded text-[10px]">ဖျက်</button>
+                    </div>
+                  ))}
+                </div>
+                <button onClick={() => setShowSavedModal(false)} className="w-full bg-slate-700 text-white py-1.5 rounded font-bold mt-2">ပိတ်မည်</button>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    function RootApp() {
+      return (
+        <ErrorBoundary>
+          <MainApp />
+        </ErrorBoundary>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<RootApp />);
+  </script>
+</body>
+</html>
