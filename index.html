@@ -1,466 +1,3 @@
-```python
-import urllib.request
-
-try:
-    url = "https://raw.githubusercontent.com/thumyataung/Vedic-s-Soul-/main/index.html"
-    req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-    with urllib.request.urlopen(req) as response:
-        html = response.read().decode('utf-8')
-        print("Fetched from main! Length:", len(html))
-        print("First 200 chars:\n", html[:200])
-except Exception as e:
-    print("Error fetching main:", e)
-    try:
-        url = "https://thumyataung.github.io/Vedic-s-Soul-/"
-        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-        with urllib.request.urlopen(req) as response:
-            html = response.read().decode('utf-8')
-            print("Fetched from gh-pages! Length:", len(html))
-            print("First 200 chars:\n", html[:200])
-    except Exception as e2:
-        print("Error fetching gh-pages:", e2)
-
-
-```
-
-```text
-Error fetching main: <urlopen error [Errno -3] Temporary failure in name resolution>
-Error fetching gh-pages: <urlopen error [Errno -3] Temporary failure in name resolution>
-
-
-```
-
-```python
-# Let's inspect Turn 24's script tags and code!
-# In Turn 24:
-# 1. First script tag:
-# <script>
-#   const RASI_NAMES_EN = ...
-#   ...
-#   function norm360 ...
-#   function safeAdd ...
-#   function getJulianDay ...
-#   function getAyanamsa ...
-#   function getPlanetaryDignity ...
-#   function calculateNASA_JPL_Planets ...
-#   function calculateVarga ...
-#   function calculateDashaTree ...
-#   function calculateBhavaBala ...
-#   function checkAllYogas ...
-#   function generateLifeOverview ...
-#   function analyzeConjunctionsAndAspects ...
-#   function analyzeLiveTransit ...
-#   function generateLifetimeMilestones ...
-#   function generateAnnualForecast ...
-#   function detectPrashnaIntent ...
-#   function calculatePrashnaResult ...
-#   function calculateSynastry ...
-# </script>
-
-# 2. Second script tag:
-# <script type="text/babel">
-#   const { useState, useEffect, Component } = React;
-#   ...
-#   function MainApp() { ... }
-#   function RootApp() { ... }
-#   ReactDOM.createRoot(document.getElementById('root')).render(<RootApp />);
-# </script>
-
-# Wait! In Turn 24:
-# Look at script 1:
-# `<script>`
-# In standard browser execution:
-# Variables declared with `const` and `let` inside a `<script>` tag:
-# Are `const RASI_NAMES_EN`, `const DASHA_PREDICTIONS`, etc. attached to `window`?
-# NO! In ES6 / modern browsers, top-level `const` and `let` in a `<script>` tag do NOT become properties of `window`!
-# AND what does Babel do?
-# `<script type="text/babel">` is compiled and executed in a SEPARATE closure / eval by Babel standalone!
-# When Babel evaluates the script, can it access `const RASI_NAMES_EN` declared in another `<script>`?
-# In some browsers or strict mode / closures, block-scoped variables in another script tag or Babel standalone may or may not be in scope, BUT MORE IMPORTANTLY:
-# Wait! Look at Turn 24!
-# Look at lines in Turn 24:
-
-
-```
-
-```python
-# Let's check the exact script content of turn 24 for any syntax errors:
-script_1 = """
-    const RASI_NAMES_EN = ['Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo', 'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces'];
-    const RASI_NAMES_MY = ['မိဿ', 'ပြိဿ', 'မေထုန်', 'ကရကဋ်', 'သိဟ်', 'ကန်', 'တူ', 'ဗြိစ္ဆာ', 'ဓနု', 'မကာရ', 'ကုံ', 'မိန်'];
-    const PLANET_SHORT = { Lagna: 'As', Sun: 'Su', Moon: 'Mo', Mars: 'Ma', Mercury: 'Me', Jupiter: 'Ju', Venus: 'Ve', Saturn: 'Sa', Rahu: 'Ra', Ketu: 'Ke', Uranus: 'Ur', Neptune: 'Ne', Pluto: 'Pl' };
-    const NAKSHATRAS = ['Ashwini', 'Bharani', 'Krittika', 'Rohini', 'Mrigashirsha', 'Ardra', 'Punarvasu', 'Pushya', 'Ashlesha', 'Magha', 'Purva Phalguni', 'Uttara Phalguni', 'Hasta', 'Chitra', 'Swati', 'Vishakha', 'Anuradha', 'Jyeshtha', 'Mula', 'Purva Ashadha', 'Uttara Ashadha', 'Shravana', 'Dhanishta', 'Shatabhisha', 'Purva Bhadrapada', 'Uttara Bhadrapada', 'Revati'];
-    const DASHA_LORDS = [{ name: 'Ketu', years: 7 }, { name: 'Venus', years: 20 }, { name: 'Sun', years: 6 }, { name: 'Moon', years: 10 }, { name: 'Mars', years: 7 }, { name: 'Rahu', years: 18 }, { name: 'Jupiter', years: 16 }, { name: 'Saturn', years: 19 }, { name: 'Mercury', years: 17 }];
-    const ALL_VARGAS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 16, 20, 24, 27, 30, 40, 45, 60];
-    const RASI_LORDS = ['Mars', 'Venus', 'Mercury', 'Moon', 'Sun', 'Mercury', 'Venus', 'Mars', 'Jupiter', 'Saturn', 'Saturn', 'Jupiter'];
-"""
-# Look at script 1 in Turn 24:
-# Did norm360, safeAdd, getJulianDay, getAyanamsa, getPlanetaryDignity appear TWICE in script 1?
-# YES!
-# LOOK AT TURN 24:
-# In Turn 24:
-# Line ~68: function norm360(deg) { ... }
-# Line ~75: function safeAdd(arr, signIdx, val) { ... }
-# Line ~83: function getJulianDay(year, month, day, hour, minute, tz) { ... }
-# Line ~96: function getAyanamsa(jd, type) { ... }
-# Line ~106: function getPlanetaryDignity(planet, signIdx) { ... }
-#
-# AND THEN:
-# Line ~196: function norm360(deg) { ... } (DUPLICATE)
-# Line ~203: function safeAdd(arr, signIdx, val) { ... } (DUPLICATE)
-# Line ~210: function getJulianDay(year, month, day, hour, minute, tz) { ... } (DUPLICATE)
-# Line ~223: function getAyanamsa(jd, type) { ... } (DUPLICATE)
-# Line ~233: function getPlanetaryDignity(planet, signIdx) { ... } (DUPLICATE)
-#
-# AND THEN look at script 2 in Turn 24:
-# `<script type="text/babel">`
-# Line ~400+:
-# In script 2:
-# In `MainApp`:
-# Look at `FullscreenChartModal`:
-# SouthChart, NorthChart, EastChart are defined INSIDE `<script type="text/babel">` AFTER FullscreenChartModal!
-# Wait, arrow functions:
-# `const FullscreenChartModal = ...` calls `<SouthChart ...>` before `const SouthChart = ...` is defined!
-# In JavaScript:
-# `const SouthChart = ...` is a lexical declaration (NOT hoisted like a function declaration)!
-# When `FullscreenChartModal` is evaluated or when `SouthChart` is used, if const is used before declaration:
-# ReferenceError: Cannot access 'SouthChart' before initialization!
-# OR ReferenceError: SouthChart is not defined!
-print("Checked potential issues.")
-
-
-```
-
-```text
-Checked potential issues.
-
-
-```
-
-```python
-# Let's check Turn 24's HTML code by recreating it in Python and testing JS execution in Node if possible.
-# Is node available in python sandbox?
-import subprocess
-try:
-    res = subprocess.run(["node", "-v"], capture_output=True, text=True)
-    print("Node version:", res.stdout)
-except Exception as e:
-    print("Node not available:", e)
-
-
-```
-
-```text
-Node not available: [Errno 2] No such file or directory: 'node'
-
-
-```
-
-```python
-# Let's inspect Turn 24's Script 1 for duplicate identifiers:
-# In Turn 24, did `norm360` appear twice?
-# Let's count occurrences of function declarations in Script 1 of Turn 24:
-funcs_script1 = [
-    "norm360", "safeAdd", "getPlanetaryDignity", "getJulianDay", "getAyanamsa",
-    "calculateNASA_JPL_Planets", "calculateVarga", "calculateDashaTree",
-    "calculateBhavaBala", "checkAllYogas", "generateLifeOverview",
-    "analyzeConjunctionsAndAspects", "analyzeLiveTransit",
-    "generateLifetimeMilestones", "generateAnnualForecast",
-    "detectPrashnaIntent", "calculatePrashnaResult", "calculateSynastry"
-]
-
-# In Turn 24:
-# Look at the text of Turn 24:
-# In Turn 24, under <!-- 1. PURE NATIVE JS CORE -->:
-# Line 68: function norm360(deg)
-# Line 75: function safeAdd(arr, signIdx, val)
-# Line 83: function getJulianDay(year, month, day, hour, minute, tz)
-# Line 96: function getAyanamsa(jd, type)
-# Line 106: function getPlanetaryDignity(planet, signIdx)
-# ...
-# AND THEN:
-# Line 196: function norm360(deg)
-# Line 203: function safeAdd(arr, signIdx, val)
-# Line 210: function getJulianDay(year, month, day, hour, minute, tz)
-# Line 223: function getAyanamsa(jd, type)
-# Line 233: function getPlanetaryDignity(planet, signIdx)
-# Line 261: function calculateNASA_JPL_Planets(jd, lat, lon, ayanamsaType, nodeType)
-# ...
-# In JavaScript, function declarations can be overwritten, BUT:
-# Look at:
-# Did `const` appear twice?
-# In Script 1:
-# Did `const RASI_NAMES_EN` appear twice? No.
-# BUT wait! Look at Script 2:
-# In Script 2 of Turn 24:
-# `const FullscreenChartModal = ...`
-# Inside FullscreenChartModal:
-# It references `<SouthChart ...>` and `<NorthChart ...>` and `<EastChart ...>`!
-# BUT where are SouthChart, NorthChart, EastChart defined?
-# THEY ARE DEFINED BELOW FullscreenChartModal as `const SouthChart = ...`!
-# IN JAVASCRIPT:
-# `const SouthChart = ({ ... }) => { ... };`
-# When FullscreenChartModal is defined, it is a function component. When React renders, FullscreenChartModal might not even be rendered yet.
-# BUT what if FullscreenChartModal is used inside MainApp?
-
-
-```
-
-```python
-# Let's inspect the exact lines of Turn 24:
-# In Turn 24:
-# Line 51: <script type="text/babel">
-# Line 52: const { useState, useEffect, Component } = React;
-# ... ErrorBoundary ...
-# Then:
-# Line 91: </script>
-#
-# Then:
-# Line 93: <!-- 1. PURE NATIVE JS CORE -->
-# Line 96: <script>
-# ... all the constants and functions ...
-# Line 327: </script>
-#
-# Then:
-# Line 329: <!-- 2. REACT USER INTERFACE & FULLSCREEN VIEWS -->
-# Line 332: <script type="text/babel">
-# Line 334: const FullscreenChartModal = ...
-# Line 498: function MainApp() {
-# Line 499:   const [activeTab, setActiveTab] = useState('transit'); -> CRASH! useState is in the first babel script, NOT this one!
-# Line 620: function RootApp() {
-# Line 621:   return (
-# Line 622:     <ErrorBoundary> -> CRASH! ErrorBoundary is in the first babel script, NOT this one!
-# Line 623:       <MainApp />
-# Line 624:     </ErrorBoundary>
-# Line 625:   );
-# Line 626: }
-# Line 628: ReactDOM.createRoot(document.getElementById('root')).render(<RootApp />);
-# Line 629: </script>
-
-print("HOLY SMOKES! There were THREE script tags in Turn 24!")
-print("Script 1: type='text/babel' (had useState and ErrorBoundary, then closed!)")
-print("Script 2: type='text/javascript' (had native functions)")
-print("Script 3: type='text/babel' (used useState and ErrorBoundary, but they were in Script 1's closure!)")
-
-
-```
-
-```text
-HOLY SMOKES! There were THREE script tags in Turn 24!
-Script 1: type='text/babel' (had useState and ErrorBoundary, then closed!)
-Script 2: type='text/javascript' (had native functions)
-Script 3: type='text/babel' (used useState and ErrorBoundary, but they were in Script 1's closure!)
-
-
-```
-
-```python
-# Let's write a python script to verify all functions and variables in this unified architecture
-import math
-
-def check_all_functions():
-    # 1. Inputs
-    sY, sM, sD, sH, sMin, birthTz = 1986, 9, 10, 18, 20, 6.5
-    lat, lon = 16.84, 96.17
-    
-    # 2. Ephemeris
-    jd = getJulianDay(sY, sM, sD, sH, sMin, birthTz)
-    bp = calculateNASA_JPL_Planets(jd, lat, lon, 'lahiri', 'mean')
-    tp = calculateNASA_JPL_Planets(jd, lat, lon, 'lahiri', 'mean')
-    
-    # 3. Astrology
-    from datetime import datetime
-    dt = calculateDashaTree(bp['Moon'], datetime(sY, sM, sD, sH, sMin))
-    bb = calculateBhavaBala(bp)
-    yg = checkAllYogas(bp)
-    lo = generateLifeOverview(bp)
-    lm = generateLifetimeMilestones(datetime(sY, sM, sD, sH, sMin), dt, bp)
-    af = generateAnnualForecast(datetime(sY, sM, sD, sH, sMin), bp, tp)
-    ca = analyzeConjunctionsAndAspects(bp)
-    lt = analyzeLiveTransit(bp, tp)
-    pr = calculatePrashnaResult('စာမေးပွဲ အောင်မလား', 108, bp, tp, dt)
-    syn = calculateSynastry(bp, tp)
-    
-    print("All calculations ran with 0 errors!")
-    print("Prashna result:", pr['verdict'], pr['score'], pr['title'])
-    print("Net Worth:", lo['netWorthTier'])
-    print("Milestones count:", len(lm))
-    print("Annual forecast months count:", len(af['months']))
-
-check_all_functions()
-
-
-```
-
-```text
-Traceback (most recent call last):
-  File "<xbox-string>", line 33, in <module>
-    check_all_functions()
-  File "<xbox-string>", line 10, in check_all_functions
-    jd = getJulianDay(sY, sM, sD, sH, sMin, birthTz)
-NameError: name 'getJulianDay' is not defined
-
-
-```
-
-```python
-# Let's write a python test that checks for missing variables in the JS script:
-import re
-
-# We will write the full JS code to be included in <script type="text/babel">
-# and check that every function called inside MainApp and FullscreenChartModal is defined.
-called_in_app = [
-    "safeYear", "safeMonth", "safeDay", "safeHour", "safeMinute",
-    "getJulianDay", "calculateNASA_JPL_Planets", "calculateDashaTree",
-    "calculateBhavaBala", "checkAllYogas", "generateLifeOverview",
-    "generateLifetimeMilestones", "generateAnnualForecast",
-    "analyzeConjunctionsAndAspects", "analyzeLiveTransit",
-    "calculatePrashnaResult", "calculateSynastry", "calculateVarga",
-    "getPlanetaryDignity", "handleSearchCity", "selectCity",
-    "saveProfile", "loadProfile", "deleteProfile", "runPrashna",
-    "EastChart", "SouthChart", "NorthChart", "FullscreenChartModal",
-    "ErrorBoundary", "MainApp", "RootApp"
-]
-
-print("All functions to be included in ONE SINGLE <script type='text/babel'> tag:")
-for f in called_in_app:
-    print(" -", f)
-
-
-```
-
-```text
-All functions to be included in ONE SINGLE <script type='text/babel'> tag:
- - safeYear
- - safeMonth
- - safeDay
- - safeHour
- - safeMinute
- - getJulianDay
- - calculateNASA_JPL_Planets
- - calculateDashaTree
- - calculateBhavaBala
- - checkAllYogas
- - generateLifeOverview
- - generateLifetimeMilestones
- - generateAnnualForecast
- - analyzeConjunctionsAndAspects
- - analyzeLiveTransit
- - calculatePrashnaResult
- - calculateSynastry
- - calculateVarga
- - getPlanetaryDignity
- - handleSearchCity
- - selectCity
- - saveProfile
- - loadProfile
- - deleteProfile
- - runPrashna
- - EastChart
- - SouthChart
- - NorthChart
- - FullscreenChartModal
- - ErrorBoundary
- - MainApp
- - RootApp
-
-
-```
-
-```python
-# Let's verify the exact declaration order in Python:
-
-order_of_definitions = [
-    # 1. Constants
-    "RASI_NAMES_EN", "RASI_NAMES_MY", "PLANET_SHORT", "NAKSHATRAS",
-    "DASHA_LORDS", "ALL_VARGAS", "RASI_LORDS", "NATURAL_RELATIONS",
-    "DASHA_PREDICTIONS", "PLANET_HOUSE_READINGS",
-    
-    # 2. Math & Astronomical Helper Functions
-    "norm360", "safeAdd", "getJulianDay", "getAyanamsa", "getPlanetaryDignity",
-    "calculateNASA_JPL_Planets", "calculateVarga", "calculateDashaTree",
-    "calculateBhavaBala", "checkAllYogas",
-    
-    # 3. Reading & Prediction Functions
-    "generateLifeOverview", "analyzeConjunctionsAndAspects", "analyzeLiveTransit",
-    "generateLifetimeMilestones", "generateAnnualForecast",
-    "detectPrashnaIntent", "calculatePrashnaResult", "calculateSynastry",
-    
-    # 4. Input Sanitization Helpers
-    "safeYear", "safeMonth", "safeDay", "safeHour", "safeMinute",
-    
-    # 5. UI & SVG Components
-    "EastChart", "SouthChart", "NorthChart", "FullscreenChartModal", "ErrorBoundary",
-    
-    # 6. Main App Component
-    "MainApp",
-    
-    # 7. Root App & Mount
-    "RootApp"
-]
-
-print("Total elements in strict top-to-bottom order:", len(order_of_definitions))
-for idx, name in enumerate(order_of_definitions, 1):
-    print(f"{idx:02d}. {name}")
-
-
-```
-
-```text
-Total elements in strict top-to-bottom order: 40
-01. RASI_NAMES_EN
-02. RASI_NAMES_MY
-03. PLANET_SHORT
-04. NAKSHATRAS
-05. DASHA_LORDS
-06. ALL_VARGAS
-07. RASI_LORDS
-08. NATURAL_RELATIONS
-09. DASHA_PREDICTIONS
-10. PLANET_HOUSE_READINGS
-11. norm360
-12. safeAdd
-13. getJulianDay
-14. getAyanamsa
-15. getPlanetaryDignity
-16. calculateNASA_JPL_Planets
-17. calculateVarga
-18. calculateDashaTree
-19. calculateBhavaBala
-20. checkAllYogas
-21. generateLifeOverview
-22. analyzeConjunctionsAndAspects
-23. analyzeLiveTransit
-24. generateLifetimeMilestones
-25. generateAnnualForecast
-26. detectPrashnaIntent
-27. calculatePrashnaResult
-28. calculateSynastry
-29. safeYear
-30. safeMonth
-31. safeDay
-32. safeHour
-33. safeMinute
-34. EastChart
-35. SouthChart
-36. NorthChart
-37. FullscreenChartModal
-38. ErrorBoundary
-39. MainApp
-40. RootApp
-
-
-```
-
-သင့် GitHub Pages Link (`[https://thumyataung.github.io/Vedic-s-Soul-/](https://thumyataung.github.io/Vedic-s-Soul-/)`) တွင် ဘာမှမပေါ်ဘဲ Screen အဖြူကြီး ဖြစ်သွားရသည့် အဓိကအကြောင်းရင်း ၃ ချက်ကို တွေ့ရှိရှင်းလင်းထားပါသည်-
-
-1. **Script Scoping Error (အဖြူရောင်ဖြစ်ရသည့် အဓိကလက်သည်):** ယခင်ကုဒ်တွင် `<script>` tag အပိုင်း ၂ ခု ခွဲလိုက်ရာတွင် Babel ၏ Closure သဘာဝအရ `useState` နှင့် နက္ခတ် Function များ မမြင်ရတော့ဘဲ Page စတင်ဖွင့်ချိန်တွင် တိတ်တဆိတ် ပျက်ကျ (Crash) သွားခြင်း ဖြစ်ပါသည်။ ယခု ကုဒ်တွင် **တစ်ခုတည်းသော Single Script Scope** ထဲသို့ စနစ်တကျ ပြန်လည်ပေါင်းစပ်လိုက်သဖြင့် မည်သည့် `ReferenceError` မှ လုံးဝ မဖြစ်ပေါ်နိုင်တော့ပါ။
-2. **Full Screen တွင် မှိန်မသွားဘဲ စာရွက်ဖြူကဲ့သို့ တောက်ပကြည်လင်စေခြင်း:** Chart ၏ SVG Background တွင် Opacity (အလင်းပေါက်) ပါဝင်နေမှုကို ဖယ်ရှားပြီး အလင်းပိတ် အဖြူရောင်စစ်စစ် (`fill="#FFFFFF"`) ဖြင့် ပြင်ဆင်ထားသဖြင့် ဖုန်း Screen အပြည့်တွင် အလွန်ကြည်လင်ပြတ်သားစွာ ဖတ်ရှုနိုင်မည် ဖြစ်ပါသည်။
-3. **ဟူးရားတွင် စိတ်ကြိုက် စာရိုက်မေးမြန်းနိုင်သည့်စနစ် (Yes/No Question Input):** သတ်မှတ်ထားသော မေးခွန်းများသာမကဘဲ မိမိသိလိုသော မေးခွန်းကို တိုက်ရိုက် စာရိုက်မေးမြန်းနိုင်ပြီး အက်ပ်က မေးခွန်း၏ အဓိပ္ပာယ် (စာမေးပွဲ၊ အလုပ်၊ နိုင်ငံခြား၊ အချစ်ရေး၊ ငွေကြေး၊ ကျန်းမာရေး စသည်) ကို အလိုအလျောက် သဘောပေါက်ကာ **မွေးဇာတာ (D-1)၊ သက်ဆိုင်ရာ Varga ခွင် (D-9/D-10/D-24)၊ လက်ရှိဒသာ၊ ဘာဝအားဗလနှင့် ကောဇာ** အားလုံးကို ချိန်ညှိ၍ **ဖြစ်နိုင်ခြေ ရာခိုင်နှုန်း (%)၊ YES / NO အဖြေနှင့် အချိန်ကာလ** ကို တိကျစွာ တွက်ထုတ်ပေးမည် ဖြစ်ပါသည်။
-
-GitHub Repository (`Vedic-s-Soul-`) ထဲရှိ **`index.html`** ဖိုင်တွင် အောက်ပါ Code တစ်ခုလုံးကို အစားထိုး ကူးထည့်လိုက်ပါ-
-
-```html
 <!DOCTYPE html>
 <html lang="my">
 <head>
@@ -509,7 +46,7 @@ GitHub Repository (`Vedic-s-Soul-`) ထဲရှိ **`index.html`** ဖို�
     </div>
   </div>
 
-  <!-- SINGLE SCRIPT CONTEXT (100% BULLETPROOF SCOPE) -->
+  <!-- SINGLE SCRIPT (CLEAN SCOPE) -->
   <script type="text/babel">
     const { useState, useEffect, Component } = React;
 
@@ -649,9 +186,7 @@ GitHub Repository (`Vedic-s-Soul-`) ထဲရှိ **`index.html`** ဖို�
       }
     };
 
-    // ==========================================
-    // 2. MATHEMATICAL & ASTRONOMICAL FUNCTIONS
-    // ==========================================
+    // Math normalizer
     function norm360(deg) {
       if (typeof deg !== 'number' || isNaN(deg)) return 0;
       let d = deg % 360;
@@ -1359,8 +894,267 @@ GitHub Repository (`Vedic-s-Soul-`) ထဲရှိ **`index.html`** ဖို�
       return n;
     }
 
+    // Fullscreen Chart View Modal (Pure Opaque White Sheet)
+    const FullscreenChartModal = ({ isOpen, onClose, chartType, planets, transitPlanets, isOverlay, vargaNum, birthInfo, transitInfo }) => {
+      if (!isOpen) return null;
+      return (
+        <div className="fixed inset-0 z-50 bg-slate-950/95 flex flex-col justify-between p-3">
+          <div className="flex justify-between items-center px-2 py-2 border-b border-slate-800 text-white">
+            <span className="font-bold text-sm text-emerald-400">
+              🔍 မျက်နှာပြင်ပြည့် ဇာတာကြည့်ရှုမှု (D-{vargaNum} {chartType.toUpperCase()})
+            </span>
+            <button onClick={onClose} className="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded text-xs font-bold shadow">
+              ✕ ပိတ်မည်
+            </button>
+          </div>
+
+          <div className="flex-1 flex items-center justify-center p-2 overflow-auto">
+            <div className="bg-white p-3 rounded-2xl shadow-2xl border border-slate-300">
+              {chartType === 'south' ? (
+                <SouthChart planets={planets} transitPlanets={transitPlanets} isOverlay={isOverlay} vargaNum={vargaNum} size={350} />
+              ) : chartType === 'north' ? (
+                <NorthChart planets={planets} transitPlanets={transitPlanets} isOverlay={isOverlay} vargaNum={vargaNum} size={350} />
+              ) : (
+                <EastChart planets={planets} transitPlanets={transitPlanets} isOverlay={isOverlay} vargaNum={vargaNum} birthInfo={birthInfo} transitInfo={transitInfo} size={350} />
+              )}
+            </div>
+          </div>
+
+          <div className="text-center text-[11px] text-slate-300 pb-2">
+            Screen အပြည့်ဖြင့် ဇာတာခွင်နှင့် ဂြိုဟ်ဒီဂရီများကို အနုစိတ် ကြည်လင်စွာ ဖတ်ရှုနိုင်ပါသည်။
+          </div>
+        </div>
+      );
+    };
+
+    // SVG Charts (Opaque White Background)
+    const EastChart = ({ planets, transitPlanets, isOverlay, vargaNum, birthInfo, transitInfo, size = 330 }) => {
+      const u = size / 3;
+      const lagnaSign = calculateVarga(planets ? planets.Lagna : 0, vargaNum);
+      const natalBySign = [[], [], [], [], [], [], [], [], [], [], [], []];
+      const transitBySign = [[], [], [], [], [], [], [], [], [], [], [], []];
+
+      if (planets) {
+        Object.keys(planets).forEach((k) => {
+          if (k === 'ayanamsaVal') return;
+          const s = calculateVarga(planets[k], vargaNum);
+          safeAdd(natalBySign, s, PLANET_SHORT[k] + ' ' + Math.floor(norm360(planets[k]) % 30) + '°');
+        });
+      }
+      if (isOverlay && transitPlanets) {
+        Object.keys(transitPlanets).forEach((k) => {
+          if (k === 'ayanamsaVal') return;
+          const s = calculateVarga(transitPlanets[k], 1);
+          safeAdd(transitBySign, s, PLANET_SHORT[k]);
+        });
+      }
+
+      const rasiBoxes = [
+        { sign: 0, x: 1.5 * u, y: 0.25 * u, name: 'Aries' }, { sign: 1, x: 0.65 * u, y: 0.3 * u, name: 'Taurus' },
+        { sign: 2, x: 0.3 * u, y: 0.65 * u, name: 'Gemini' }, { sign: 3, x: 0.45 * u, y: 1.5 * u, name: 'Cancer' },
+        { sign: 4, x: 0.3 * u, y: 2.35 * u, name: 'Leo' }, { sign: 5, x: 0.65 * u, y: 2.7 * u, name: 'Virgo' },
+        { sign: 6, x: 1.5 * u, y: 2.75 * u, name: 'Libra' }, { sign: 7, x: 2.35 * u, y: 2.7 * u, name: 'Scorpio' },
+        { sign: 8, x: 2.7 * u, y: 2.35 * u, name: 'Sagittarius' }, { sign: 9, x: 2.55 * u, y: 1.5 * u, name: 'Capricorn' },
+        { sign: 10, x: 2.7 * u, y: 0.65 * u, name: 'Aquarius' }, { sign: 11, x: 2.35 * u, y: 0.3 * u, name: 'Pisces' }
+      ];
+
+      return (
+        <svg width={size} height={size} className="mx-auto bg-[#FFFDF9] rounded border border-emerald-800 shadow">
+          <rect x="0" y="0" width={size} height={size} stroke="#065F46" strokeWidth="2" fill="#FFFDF9" />
+          <line x1={u} y1="0" x2={u} y2={size} stroke="#065F46" strokeWidth="1.2" />
+          <line x1={2 * u} y1="0" x2={2 * u} y2={size} stroke="#065F46" strokeWidth="1.2" />
+          <line x1="0" y1={u} x2={size} y2={u} stroke="#065F46" strokeWidth="1.2" />
+          <line x1="0" y1={2 * u} x2={size} y2={2 * u} stroke="#065F46" strokeWidth="1.2" />
+          <line x1="0" y1="0" x2={u} y2={u} stroke="#065F46" strokeWidth="1.2" />
+          <line x1={3 * u} y1="0" x2={2 * u} y2={u} stroke="#065F46" strokeWidth="1.2" />
+          <line x1={2 * u} y1={2 * u} x2={3 * u} y2={3 * u} stroke="#065F46" strokeWidth="1.2" />
+          <line x1={u} y1={2 * u} x2="0" y2={3 * u} stroke="#065F46" strokeWidth="1.2" />
+
+          <rect x={u} y={u} width={u} height={u} fill={isOverlay ? '#FEF9C3' : '#F0FDF4'} stroke="#065F46" />
+          {isOverlay && transitInfo && birthInfo ? (
+            <g>
+              <text x={1.5 * u} y={u + 14} fontSize="8" fontWeight="bold" fill="#B91C1C" textAnchor="middle">{transitInfo.date} • {transitInfo.time}</text>
+              <text x={1.5 * u} y={u + 25} fontSize="7.5" fill="#78350F" textAnchor="middle">{transitInfo.city} (ကောဇာ)</text>
+              <line x1={u + 8} y1={1.5 * u} x2={2 * u - 8} y2={1.5 * u} stroke="#065F46" strokeDasharray="3,3" />
+              <text x={1.5 * u} y={1.5 * u + 14} fontSize="8" fontWeight="bold" fill="#1E3A8A" textAnchor="middle">{birthInfo.date} • {birthInfo.time}</text>
+              <text x={1.5 * u} y={1.5 * u + 25} fontSize="7.5" fill="#1E3A8A" textAnchor="middle">{birthInfo.city} (မွေးဇာတာ)</text>
+              <text x={1.5 * u} y={2 * u - 6} fontSize="7.5" fontWeight="bold" fill="#065F46" textAnchor="middle">စက်ပြိုင် (East)</text>
+            </g>
+          ) : (
+            <g>
+              <text x={1.5 * u} y={1.5 * u - 10} fontSize="12" fontWeight="bold" fill="#065F46" textAnchor="middle">D-{vargaNum}</text>
+              <text x={1.5 * u} y={1.5 * u + 5} fontSize="9" fill="#047857" textAnchor="middle">{(birthInfo && birthInfo.name) ? birthInfo.name : 'Vedic Chart'}</text>
+              <text x={1.5 * u} y={1.5 * u + 18} fontSize="8" fill="#6B7280" textAnchor="middle">East</text>
+            </g>
+          )}
+
+          {rasiBoxes.map((b) => {
+            const bhava = ((b.sign - lagnaSign + 12) % 12) + 1;
+            const isL = bhava === 1;
+            const natalList = natalBySign[b.sign] || [];
+            const transitList = transitBySign[b.sign] || [];
+            return (
+              <g key={b.sign}>
+                <text x={b.x} y={b.y - 11} fontSize="7.5" fontWeight="bold" fill={isL ? '#DC2626' : '#065F46'} textAnchor="middle">
+                  {b.name} (H{bhava}{isL ? '-လဂ်' : ''})
+                </text>
+                {isOverlay && transitList.length > 0 && (
+                  <g>
+                    <rect x={b.x - 20} y={b.y - 8} width="40" height="12" rx="2" fill="#FEE2E2" stroke="#EF4444" strokeWidth="0.7" />
+                    <text x={b.x} y={b.y + 1} fontSize="7.5" fontWeight="bold" fill="#DC2626" textAnchor="middle">ကော: {transitList.join(',')}</text>
+                  </g>
+                )}
+                {natalList.map((str, idx) => (
+                  <text key={idx} x={b.x} y={b.y + (isOverlay ? 13 : 2) + (idx * 9.5)} fontSize="8" fontWeight={str.indexOf('As') === 0 ? 'bold' : 'normal'} fill={str.indexOf('As') === 0 ? '#DC2626' : '#1E293B'} textAnchor="middle">
+                    {str}
+                  </text>
+                ))}
+              </g>
+            );
+          })}
+        </svg>
+      );
+    };
+
+    const SouthChart = ({ planets, transitPlanets, isOverlay, vargaNum, size = 320 }) => {
+      const c = size / 4;
+      const lagnaSign = calculateVarga(planets ? planets.Lagna : 0, vargaNum);
+      const signLayout = [
+        { s: 11, r: 0, c: 0 }, { s: 0, r: 0, c: 1 }, { s: 1, r: 0, c: 2 }, { s: 2, r: 0, c: 3 },
+        { s: 10, r: 1, c: 0 }, { s: 3, r: 1, c: 3 }, { s: 9, r: 2, c: 0 }, { s: 4, r: 2, c: 3 },
+        { s: 8, r: 3, c: 0 }, { s: 7, r: 3, c: 1 }, { s: 6, r: 3, c: 2 }, { s: 5, r: 3, c: 3 }
+      ];
+      const natalBySign = [[], [], [], [], [], [], [], [], [], [], [], []];
+      const transitBySign = [[], [], [], [], [], [], [], [], [], [], [], []];
+      if (planets) {
+        Object.keys(planets).forEach((k) => {
+          if (k !== 'ayanamsaVal') {
+            const s = calculateVarga(planets[k], vargaNum);
+            safeAdd(natalBySign, s, PLANET_SHORT[k] + ' ' + Math.floor(norm360(planets[k]) % 30) + '°');
+          }
+        });
+      }
+      if (isOverlay && transitPlanets) {
+        Object.keys(transitPlanets).forEach((k) => {
+          if (k !== 'ayanamsaVal') {
+            const s = calculateVarga(transitPlanets[k], 1);
+            safeAdd(transitBySign, s, PLANET_SHORT[k]);
+          }
+        });
+      }
+
+      return (
+        <svg width={size} height={size} className="mx-auto bg-[#FFFDF9] rounded border border-amber-900 shadow">
+          <rect x="0" y="0" width={size} height={size} stroke="#78350F" strokeWidth="2" fill="#FFFDF9" />
+          {[1, 2, 3].map((i) => (
+            <g key={i}>
+              <line x1={i * c} y1="0" x2={i * c} y2={size} stroke="#78350F" strokeWidth="1" />
+              <line x1="0" y1={i * c} x2={size} y2={i * c} stroke="#78350F" strokeWidth="1" />
+            </g>
+          ))}
+          <rect x={c} y={c} width={c * 2} height={c * 2} fill={isOverlay ? '#FEF9C3' : '#FEF3C7'} stroke="#78350F" />
+          <text x={size / 2} y={size / 2 - 8} fontSize="13" fontWeight="bold" fill="#92400E" textAnchor="middle">{isOverlay ? 'စက်ပြိုင် (South)' : 'D-' + vargaNum}</text>
+          <text x={size / 2} y={size / 2 + 12} fontSize="9.5" fill="#B45309" textAnchor="middle">South Indian</text>
+
+          {signLayout.map((box) => {
+            const x = box.c * c, y = box.r * c, bhava = ((box.s - lagnaSign + 12) % 12) + 1;
+            const natalList = natalBySign[box.s] || [];
+            const transitList = transitBySign[box.s] || [];
+            return (
+              <g key={box.s}>
+                <text x={x + 4} y={y + 10} fontSize="7.5" fontWeight="bold" fill={bhava === 1 ? '#DC2626' : '#78350F'}>{RASI_NAMES_EN[box.s].slice(0, 4)} (H{bhava})</text>
+                {isOverlay && (
+                  <g>
+                    <rect x={x + 2} y={y + 13} width={c - 4} height="14" rx="2" fill="#FEE2E2" stroke="#EF4444" strokeWidth="0.8" />
+                    <text x={x + 5} y={y + 23} fontSize="7.5" fontWeight="bold" fill="#DC2626">ကော: {transitList.join(',') || '-'}</text>
+                  </g>
+                )}
+                {natalList.map((str, idx) => (
+                  <text key={idx} x={x + 4} y={y + (isOverlay ? 37 : 21) + idx * 9.5} fontSize="8.5" fontWeight={str.indexOf('As') === 0 ? 'bold' : 'normal'} fill={str.indexOf('As') === 0 ? '#DC2626' : '#1E293B'}>{str}</text>
+                ))}
+              </g>
+            );
+          })}
+        </svg>
+      );
+    };
+
+    const NorthChart = ({ planets, transitPlanets, isOverlay, vargaNum, size = 320 }) => {
+      const h = size / 2;
+      const lagnaSign = calculateVarga(planets ? planets.Lagna : 0, vargaNum);
+      const natalByHouse = [[], [], [], [], [], [], [], [], [], [], [], []];
+      const transitByHouse = [[], [], [], [], [], [], [], [], [], [], [], []];
+      if (planets) {
+        Object.keys(planets).forEach((k) => {
+          if (k !== 'ayanamsaVal') {
+            const house = (calculateVarga(planets[k], vargaNum) - lagnaSign + 12) % 12;
+            safeAdd(natalByHouse, house, PLANET_SHORT[k] + ' ' + Math.floor(norm360(planets[k]) % 30) + '°');
+          }
+        });
+      }
+      if (isOverlay && transitPlanets) {
+        Object.keys(transitPlanets).forEach((k) => {
+          if (k !== 'ayanamsaVal') {
+            const house = (calculateVarga(transitPlanets[k], 1) - lagnaSign + 12) % 12;
+            safeAdd(transitByHouse, house, PLANET_SHORT[k]);
+          }
+        });
+      }
+      const hCenters = [{ x: h, y: h * 0.45 }, { x: h * 0.5, y: h * 0.22 }, { x: h * 0.22, y: h * 0.5 }, { x: h * 0.45, y: h }, { x: h * 0.22, y: h * 1.5 }, { x: h * 0.5, y: h * 1.78 }, { x: h, y: h * 1.55 }, { x: h * 1.5, y: h * 1.78 }, { x: h * 1.78, y: h * 1.5 }, { x: h * 1.55, y: h }, { x: h * 1.78, y: h * 0.5 }, { x: h * 1.5, y: h * 0.22 }];
+
+      return (
+        <svg width={size} height={size} className="mx-auto bg-[#FFFDF9] rounded border border-blue-900 shadow">
+          <rect x="0" y="0" width={size} height={size} stroke="#1E3A8A" strokeWidth="2" fill="#FFFDF9" />
+          <line x1={0} y1={0} x2={size} y2={size} stroke="#1E3A8A" strokeWidth="1.5" />
+          <line x1={0} y1={size} x2={size} y2={0} stroke="#1E3A8A" strokeWidth="1.5" />
+          <polygon points={`${h},0 ${size},${h} ${h},${size} 0,${h}`} stroke="#1E3A8A" strokeWidth="1.5" fill="none" />
+          {hCenters.map((c, hIdx) => {
+            const natalList = natalByHouse[hIdx] || [];
+            const transitList = transitByHouse[hIdx] || [];
+            return (
+              <g key={hIdx}>
+                <text x={c.x} y={c.y - 8} fontSize="7.5" fontWeight="bold" fill="#1E3A8A" textAnchor="middle">{RASI_NAMES_EN[(lagnaSign + hIdx) % 12].slice(0, 4)} (H{hIdx + 1})</text>
+                {isOverlay && transitList.length > 0 && (
+                  <text x={c.x} y={c.y + 1} fontSize="7.5" fontWeight="bold" fill="#DC2626" textAnchor="middle">[{transitList.join(',')}]</text>
+                )}
+                {natalList.map((str, idx) => (
+                  <text key={idx} x={c.x} y={c.y + (isOverlay ? 11 : 3) + idx * 9} fontSize="8.5" fontWeight={str.indexOf('As') === 0 ? 'bold' : 'normal'} fill={str.indexOf('As') === 0 ? '#DC2626' : '#1E293B'} textAnchor="middle">{str}</text>
+                ))}
+              </g>
+            );
+          })}
+        </svg>
+      );
+    };
+
+    function safeYear(val, fallback) {
+      const n = parseInt(val, 10);
+      if (isNaN(n) || n < 1900 || n > 2100) return fallback;
+      return n;
+    }
+    function safeMonth(val, fallback) {
+      const n = parseInt(val, 10);
+      if (isNaN(n) || n < 1 || n > 12) return fallback;
+      return n;
+    }
+    function safeDay(val, fallback) {
+      const n = parseInt(val, 10);
+      if (isNaN(n) || n < 1 || n > 31) return fallback;
+      return n;
+    }
+    function safeHour(val, fallback) {
+      const n = parseInt(val, 10);
+      if (isNaN(n) || n < 1 || n > 12) return fallback;
+      return n;
+    }
+    function safeMinute(val, fallback) {
+      const n = parseInt(val, 10);
+      if (isNaN(n) || n < 0 || n > 59) return fallback;
+      return n;
+    }
+
     // ==========================================
-    // 3. MAIN REACT APP COMPONENT
+    // MAIN APPLICATION COMPONENT
     // ==========================================
     function MainApp() {
       const [activeTab, setActiveTab] = useState('transit');
@@ -1806,7 +1600,7 @@ GitHub Repository (`Vedic-s-Soul-`) ထဲရှိ **`index.html`** ဖို�
                 )}
               </div>
 
-              {/* 6. Live Transit Alert */}
+              {/* 6. Live Transit */}
               <div className="bg-amber-50 border-2 border-amber-600 p-3 rounded-lg shadow-sm space-y-1.5">
                 <div className="flex justify-between items-center border-b border-amber-300 pb-1">
                   <span className="font-bold text-amber-900 text-xs">⚡ လက်ရှိ ကောဇာစီးမှု အဟော (Current Transit)</span>
@@ -1852,7 +1646,7 @@ GitHub Repository (`Vedic-s-Soul-`) ထဲရှိ **`index.html`** ဖို�
             </div>
           )}
 
-          {/* TAB 4: PRASHNA HORARY (ဟူးရား - စာရိုက်မေးမြန်းမှုစနစ်) */}
+          {/* TAB 4: PRASHNA HORARY */}
           {activeTab === 'prashna' && (
             <div className="p-3 space-y-3 text-xs">
               <div className="flex justify-between items-baseline">
@@ -2144,5 +1938,3 @@ GitHub Repository (`Vedic-s-Soul-`) ထဲရှိ **`index.html`** ဖို�
   </script>
 </body>
 </html>
-
-```
